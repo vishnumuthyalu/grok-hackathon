@@ -1,0 +1,15 @@
+SYNTHETIC – FOR DEMO
+Patient name: Synthetic Patient B
+Age: 54
+Sex: Female
+Home city: Houston, TX
+Cancer type: Breast cancer
+Histologic type: Invasive ductal carcinoma
+Stage: IV (AJCC 8th edition)
+ECOG performance status: 1
+Biomarkers: HER2 IHC 3+ amplified; ER negative; PR negative
+Prior immunotherapy: No
+Prior treatment: Trastuzumab + pertuzumab + docetaxel; T-DXd (progressed)
+Last imaging: 21 days before this note
+Brain MRI: negative
+Notes: Metastatic HER2-positive breast cancer after two lines of therapy.

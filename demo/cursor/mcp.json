@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "trialradar": {
+      "command": "python",
+      "args": ["-m", "trialradar.mcp_server"],
+      "env": {
+        "DEMO_CACHE": "1",
+        "LLM_PROVIDER": "ollama",
+        "OLLAMA_MODEL": "qwen2.5:7b",
+        "LLM_FALLBACK": "stub"
+      }
+    }
+  }
+}

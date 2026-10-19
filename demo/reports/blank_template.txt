@@ -1,0 +1,15 @@
+SYNTHETIC – FOR DEMO
+Patient name:
+Age:
+Sex:
+Home city:
+Cancer type:
+Histologic type:
+Stage:
+ECOG performance status:
+Biomarkers:
+Prior immunotherapy:
+Prior treatment:
+Last imaging:
+Brain MRI:
+Notes:
