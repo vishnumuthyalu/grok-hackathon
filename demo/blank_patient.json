@@ -1,0 +1,18 @@
+{
+  "id": "blank",
+  "age": null,
+  "sex": null,
+  "cancer_type": null,
+  "stage": null,
+  "biomarkers": [],
+  "prior_treatments": [],
+  "ecog": null,
+  "city": null,
+  "last_scan_days_ago": null,
+  "notes": null,
+  "brain_mets": null,
+  "kidney_adequate": null,
+  "prior_immunotherapy": null,
+  "measurable_disease": null,
+  "line_of_therapy": null
+}

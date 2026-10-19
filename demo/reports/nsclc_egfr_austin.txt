@@ -1,0 +1,15 @@
+SYNTHETIC – FOR DEMO
+Patient name: Synthetic Patient A
+Age: 62
+Sex: Female
+Home city: Austin, TX
+Cancer type: Non-small cell lung cancer
+Histologic type: Adenocarcinoma
+Stage: IIIB (AJCC 8th edition)
+ECOG performance status: 1
+Biomarkers: EGFR exon 21 L858R mutation detected; ALK not detected; PD-L1 TPS 40%
+Prior immunotherapy: No
+Prior treatment: Osimertinib (progressed)
+Last imaging: 47 days before this note
+Brain MRI: not in record
+Notes: Progressed on first-line osimertinib. No creatinine clearance in this note.

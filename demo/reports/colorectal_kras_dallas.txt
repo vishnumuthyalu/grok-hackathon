@@ -1,0 +1,15 @@
+SYNTHETIC – FOR DEMO
+Patient name: Synthetic Patient C
+Age: 58
+Sex: Male
+Home city: Dallas, TX
+Cancer type: Colorectal cancer
+Histologic type: Adenocarcinoma
+Stage: IV (AJCC 8th edition)
+ECOG performance status: 0
+Biomarkers: KRAS G12C; MSS; BRAF wild-type
+Prior immunotherapy: No
+Prior treatment: FOLFOX + bevacizumab; FOLFIRI (progressed)
+Last imaging: 18 days before this note
+Brain MRI: not in record
+Notes: Metastatic colorectal adenocarcinoma. Microsatellite stable. No creatinine clearance in this note.

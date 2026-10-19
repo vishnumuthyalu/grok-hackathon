@@ -1,0 +1,28 @@
+# Example Goose config. Merge the extension into ~/.config/goose/config.yaml.
+# Goose talks to a local Ollama model and launches TrialRadar over stdio.
+#
+# Provider (shell or goose configure):
+#   GOOSE_PROVIDER=ollama
+#   GOOSE_MODEL=qwen2.5:7b
+#   OLLAMA_HOST=http://127.0.0.1:11434
+#
+# Start the TrialRadar window first, from the repo root:
+#   ./scripts/run.sh
+# Then the doctor's browser and this agent share data/session.json.
+
+extensions:
+  trialradar:
+    enabled: true
+    type: stdio
+    name: TrialRadar
+    description: Find recruiting cancer trials and explain every eligibility rule
+    cmd: python
+    args:
+      - -m
+      - trialradar.mcp_server
+    envs:
+      DEMO_CACHE: "1"
+      LLM_PROVIDER: "ollama"
+      OLLAMA_MODEL: "qwen2.5:7b"
+      LLM_FALLBACK: "stub"
+    timeout: 300
