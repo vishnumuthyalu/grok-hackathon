@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrialRadar · Wireframe v4.1</title>
+<script>
+  /* Apply saved theme before first paint (no flash). Default = light low-glare. */
+  try { const t = localStorage.getItem("trialradar-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+  /* ===================================================================
+     THEME TOKENS
+     Light = warm, low-glare off-white (no pure white page, no pure black text).
+     Dark  = warm charcoal (no pure black page, no pure white text).
+     Eligibility palette is Okabe-Ito based (colorblind-friendlier) and is
+     always paired with % text and a shape cue.
+     =================================================================== */
+  :root, [data-theme="light"]{
+    --bg:#f4f1ea; --surface:#faf8f3; --surface-2:#efebe2; --line:#e0d9cc; --line-2:#c9c1b2;
+    --ink:#2b2925; --ink-2:#4e4a43; --ink-3:#625d55;
+    --accent:#2b5797; --accent-ink:#ffffff; --accent-soft:#e2e9f3; --accent-text:#2b5797;
+    --flag-bg:#a34a00; --flag-ink:#ffffff; --warn-soft:#f7e9d8; --warn-line:#e3c39f;
+    --ok:#00795a; --ok-ink:#ffffff;
+    --chip:#e7e1d6; --track:#e4ded3; --tip-bg:#2b2925; --tip-ink:#f4f1ea;
+    --elig-low:#d55e00; --elig-mid:#e69f00; --elig-high:#009e73;
+    --focus:#2b5797; --shadow:0 10px 30px rgba(43,41,37,.14);
+    /* Iceberg blue top bar */
+    --bar:#c4e2f0; --bar-ink:#14313f; --bar-ink-2:#24485a; --bar-line:#a5cfe3; --bar-chip:#e4f2f8; --bar-tile:#dbeef6; --bar-focus:#14313f;
+    --next-bg:#f5e4ad; --next-ink:#3f2e00; --next-line:#dcc06a; --mark-bg:#f3dfa2;
+    color-scheme: light;
+  }
+  [data-theme="dark"]{
+    --bg:#1d1c1a; --surface:#252421; --surface-2:#2d2b28; --line:#3a3834; --line-2:#4d4a44;
+    --ink:#e8e4dc; --ink-2:#c9c3b8; --ink-3:#aaa398;
+    --accent:#8fb3ec; --accent-ink:#1d1c1a; --accent-soft:#2b3547; --accent-text:#9dbdf0;
+    --flag-bg:#eba25e; --flag-ink:#1d1c1a; --warn-soft:#3a2d20; --warn-line:#6a4c2c;
+    --ok:#4cc9a4; --ok-ink:#1d1c1a;
+    --chip:#35332f; --track:#3b3934; --tip-bg:#e8e4dc; --tip-ink:#1d1c1a;
+    --elig-low:#e8783a; --elig-mid:#e9ae2f; --elig-high:#2bb38c;
+    --focus:#9dbdf0; --shadow:0 10px 30px rgba(0,0,0,.45);
+    --bar:#1f3d4d; --bar-ink:#e3f2f9; --bar-ink-2:#c3dce8; --bar-line:#2f5568; --bar-chip:#2b4f61; --bar-tile:#264858; --bar-focus:#cfe8f3;
+    --next-bg:#4a3a10; --next-ink:#f5dc96; --next-line:#6e5822; --mark-bg:#5b4a1d;
+    color-scheme: dark;
+  }
+  :root{ --rail-w:256px; --top-h:92px; --col-w:920px; --radius:12px;
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; }
+
+  *{box-sizing:border-box}
+  html{font-size:16px}
+  html,body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+  body{font-size:1rem}
+  button{font:inherit;color:inherit;cursor:pointer}
+  input,select{font:inherit;color:var(--ink)}
+  a{color:var(--accent-text)}
+
+  /* Calm motion: only short color/opacity/transform transitions. */
+  .t{transition:background-color .15s ease, color .15s ease, border-color .15s ease}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
+  }
+
+  /* Visible focus everywhere (keyboard). */
+  :focus{outline:none}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px}
+
+  /* ===================== TOP BAR (fixed) ===================== */
+  .top{position:fixed;inset:0 0 auto 0;height:var(--top-h);z-index:40;display:flex;align-items:center;gap:12px;
+       padding:0 20px;background:var(--bar);color:var(--bar-ink);border-bottom:1px solid var(--bar-line)}
+  .top :focus-visible{outline-color:var(--bar-focus)}
+  .top .icon-btn{background:var(--bar-tile);border-color:var(--bar-line);color:var(--bar-ink)}
+  .top .icon-btn:hover{background:var(--bar-chip)}
+  .top .icon-btn[aria-expanded="true"]{background:var(--bar-ink);border-color:var(--bar-ink);color:var(--bar)}
+  .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);
+            display:grid;place-items:center;flex:none;font-size:17px;color:var(--ink-2)}
+  .icon-btn:hover{background:var(--surface-2)}
+  .icon-btn[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
+  .wm{font-weight:700;font-size:1.125rem;letter-spacing:-.01em;white-space:nowrap;margin-right:6px}
+  .wm span{color:var(--bar-ink-2)}
+  .sp{flex:1}
+
+  .saved{display:flex;align-items:center;gap:10px;padding:4px 6px 4px 12px;border:1px solid var(--line);
+         border-radius:999px;background:var(--bar-tile);border-color:var(--bar-line);white-space:nowrap;height:48px;color:var(--bar-ink)}
+  .saved .big{font-weight:700;font-size:1.0625rem;font-variant-numeric:tabular-nums}
+  .saved .lbl{color:var(--bar-ink-2);font-size:.875rem}
+  .info{position:relative;width:40px;height:40px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;padding:0}
+  .info .ring{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bar-ink-2);font-size:12px;font-weight:700;color:var(--bar-ink);display:grid;place-items:center}
+  .pop{display:none;position:absolute;top:44px;left:50%;transform:translateX(-50%);width:420px;z-index:60;
+       background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:14px 16px;
+       box-shadow:var(--shadow);text-align:left;font-weight:400;color:var(--ink);white-space:normal;cursor:default;font-size:.875rem;line-height:1.5}
+  .info:hover .pop,.info:focus-visible .pop,.info.open .pop{display:block}
+  .pop h4{margin:0 0 6px;font-size:.9375rem}
+  .pop code{display:block;background:var(--surface-2);color:var(--ink);border-radius:8px;padding:10px;font-size:.8125rem;line-height:1.55;margin:6px 0;white-space:pre-wrap}
+  .pop .ph{color:var(--ink);font-weight:700}
+  .pop small{color:var(--ink-2);display:block;margin-top:8px;font-size:.8125rem}
+
+  .badge{display:flex;flex-direction:column;gap:6px;align-items:flex-end;padding:7px 14px;border:1px solid var(--bar-line);
+         border-radius:var(--radius);background:var(--bar-tile);flex:none;color:var(--bar-ink)}
+  .badge .id{display:flex;gap:14px;align-items:baseline;font-size:1rem;color:var(--bar-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .badge .id b{font-size:1.25rem;letter-spacing:.05em;font-weight:750}
+  .badge .id .k{font-size:.8125rem;color:var(--bar-ink-2);margin-right:4px;font-weight:600}
+  .badge .src{display:inline-flex;align-items:center;gap:6px;font-size:.8125rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bar-ink-2);font-weight:700}
+  .badge .src i{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block}
+  .chips{display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end}
+  .chip{font-size:.9375rem;font-weight:600;padding:2px 11px;border-radius:999px;background:var(--bar-chip);color:var(--bar-ink);white-space:nowrap;border:1px solid var(--bar-line)}
+
+  /* ===================== RAIL (fixed drawer in the left gutter; never moves the column) ===================== */
+  .rail{position:fixed;top:var(--top-h);bottom:0;left:0;width:var(--rail-w);z-index:30;overflow:auto;
+        background:var(--surface);border-right:1px solid var(--line);transform:translateX(-100%);visibility:hidden;
+        transition:transform .18s ease, visibility 0s linear .18s}
+  .rail.open{transform:none;visibility:visible;transition:transform .18s ease}
+  @media (max-width: 1439px){ .rail.open{box-shadow:var(--shadow)} }
+  .rail-in{padding:18px 16px 28px;display:flex;flex-direction:column;gap:22px}
+  .rail h3{margin:0 0 8px;font-size:.8125rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);font-weight:700}
+  .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:var(--surface)}
+  .seg button{border:0;background:transparent;min-height:40px;min-width:44px;padding:0 12px;font-size:.9375rem;border-right:1px solid var(--line-2)}
+  .seg button:last-child{border-right:0}
+  .seg button:hover{background:var(--surface-2)}
+  .seg button small{font-size:.75rem;opacity:.9}
+  #dist-seg button{line-height:1.2;padding:4px 10px}
+  .seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+  .seg button:focus-visible{outline-offset:-3px;border-radius:0}
+  .row-ctl{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;font-size:.9375rem}
+  .cbs{display:flex;gap:2px}
+  .cbs label{display:flex;gap:6px;align-items:center;min-height:40px;min-width:40px;padding:0 6px;border-radius:8px;cursor:pointer}
+  .cbs label:hover{background:var(--surface-2)}
+  .cbs input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+  .tg{width:48px;height:40px;border:0;background:transparent;position:relative;padding:0;flex:none}
+  .tg::before{content:"";position:absolute;left:4px;top:10px;width:40px;height:22px;border-radius:999px;background:var(--line-2)}
+  .tg::after{content:"";position:absolute;top:13px;left:7px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:left .15s}
+  .tg.on::before{background:var(--accent)}
+  .tg.on::after{left:25px}
+  .fld{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+  .fld label{font-size:.8125rem;color:var(--ink-2)}
+  .fld input,.fld select{border:1px solid var(--line-2);border-radius:8px;padding:0 10px;height:40px;background:var(--bg);width:100%}
+  .fld input:focus-visible,.fld select:focus-visible{outline:3px solid var(--focus);outline-offset:0;border-color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .muted{color:var(--ink-2);font-size:.8125rem;line-height:1.5}
+
+  /* ===================== MAIN COLUMN (fixed width, centered, stable) ===================== */
+  .main{padding:calc(var(--top-h)) 20px 0}
+  .col{width:100%;max-width:var(--col-w);margin:0 auto;display:flex;flex-direction:column}
+  /* Questions are pinned under the top bar so they're always in the same spot. */
+  .qwrap{position:sticky;top:var(--top-h);z-index:20;background:var(--bg);padding:18px 0 14px}
+  .qcard{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:var(--radius);
+         padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+  .qhead{display:flex;align-items:baseline;gap:10px}
+  .qhead b{font-size:1rem}
+  .qhead span{font-size:.875rem;color:var(--ink-2)}
+  .qs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .q{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);min-height:64px}
+  .q p{margin:0;font-size:.9375rem;line-height:1.35;min-width:0;flex:1}
+  .q .seg{flex:none}
+  .q p small{display:block;color:var(--ink-2);font-size:.8125rem}
+  .q .seg button{font-size:.875rem;padding:0 10px}
+
+  .list{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+  .list-top{display:flex;align-items:baseline;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .list-top b{font-size:1.0625rem}
+  .list-top span{color:var(--ink-2);font-size:.875rem}
+    .cols,.trow{display:grid;grid-template-columns:32px minmax(0,1fr) 180px 140px;align-items:center;gap:14px}
+  .cols{padding:8px 18px;font-size:.8125rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);font-weight:600;border-bottom:1px solid var(--line)}
+  .cols .r{text-align:center}
+  .trial{border-bottom:1px solid var(--line)}
+  .trial:last-child{border-bottom:0}
+  /* Fixed row height keeps rows (and the #1 trial) in the same place across re-ranks. */
+  .trow{min-height:122px;padding:12px 18px;width:100%;border:0;background:transparent;text-align:left}
+  .trow:hover{background:var(--surface-2)}
+  .trow:focus-visible{outline-offset:-3px;border-radius:0}
+  .trial.open .trow{background:var(--surface-2)}
+  .chev{width:28px;height:28px;display:grid;place-items:center;color:var(--ink-2);transition:transform .15s ease;font-size:12px}
+  .trial.open .chev{transform:rotate(90deg);color:var(--ink)}
+  .tname{font-weight:650;font-size:1.0625rem;line-height:1.35}
+  .tsum{color:var(--ink-2);font-size:.9375rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .next{margin-top:6px;font-size:1rem;font-weight:600;display:inline-flex;gap:8px;align-items:center;max-width:100%;
+        background:var(--next-bg);color:var(--next-ink);border:1px solid var(--next-line);border-radius:8px;padding:3px 10px 3px 8px;white-space:nowrap;overflow:hidden}
+  .next b{font-weight:800;font-size:.8125rem;text-transform:uppercase;letter-spacing:.06em;flex:none}
+  .next .arr{flex:none;font-weight:800}
+  .next span{overflow:hidden;text-overflow:ellipsis}
+  .next.skip{background:var(--surface-2);color:var(--ink-2);border-color:var(--line)}
+  .dist{font-size:.9375rem}
+  .dist b{font-variant-numeric:tabular-nums}
+  .dist div{color:var(--ink-2);font-size:.875rem}
+  .elig{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .elig .pct{white-space:nowrap;font-size:.9375rem;font-weight:650;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+  .cue{width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;font-weight:800;position:relative;flex:none}
+  .cue.flag{background:var(--flag-bg);color:var(--flag-ink);cursor:help}
+  .cue.ok{background:var(--ok);color:var(--ok-ink)}
+  .cue .tip{display:none;position:absolute;right:-10px;top:26px;width:270px;z-index:30;background:var(--tip-bg);color:var(--tip-ink);
+            font-weight:400;font-size:.875rem;line-height:1.45;padding:9px 11px;border-radius:9px;text-align:left}
+  .cue.flag:hover .tip{display:block}
+  .changed .pct{background:var(--accent-soft);border-radius:6px;padding:0 6px;transition:background-color .6s ease}
+
+  .skeleton .trow{cursor:default;color:var(--ink-2)}
+  .skeleton .bar{height:12px;border-radius:6px;background:var(--track);margin:6px 0}
+
+  /* ===================== EXPANDED DETAIL ===================== */
+  .detail{display:none;padding:4px 18px 20px 64px;background:var(--surface-2)}
+  .trial.open .detail{display:block}
+  .full-title{font-size:.9375rem;color:var(--ink);margin:0 0 6px;max-width:760px}
+  .meta{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.875rem;color:var(--ink-2);margin-bottom:12px}
+  .meta a{display:inline-flex;align-items:center;min-height:40px;padding:0 4px;text-decoration:none;font-weight:600}
+  .meta a:hover{text-decoration:underline}
+  .notable{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:10px;
+           padding:10px 12px;font-size:.9375rem;margin-bottom:12px;max-width:760px;color:var(--ink)}
+  .notable .cue{margin-top:2px}
+  .groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:14px}
+  details.grp{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+  details.grp summary{list-style:none;cursor:pointer;min-height:44px;padding:0 12px;font-size:.9375rem;font-weight:650;display:flex;align-items:center;gap:8px;border-radius:10px}
+  details.grp summary::-webkit-details-marker{display:none}
+  details.grp summary:hover{background:var(--bg)}
+  details.grp summary .ct{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:500}
+  details.grp summary .car{color:var(--ink-2);transition:transform .15s ease;font-size:11px}
+  details.grp[open] summary .car{transform:rotate(90deg)}
+  .gicon{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none}
+  .grp ul{margin:0;padding:0 12px 12px 30px;font-size:.875rem;color:var(--ink-2)}
+  .grp li{margin:4px 0}
+  .grp li .ql{color:var(--accent-text);font-size:.8125rem;font-weight:600}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:1px solid var(--line-2);background:var(--surface);border-radius:10px;min-height:40px;padding:0 14px;font-size:.9375rem}
+  .btn:hover{background:var(--bg)}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+  .btn.pri:hover{filter:brightness(1.06)}
+
+  .list-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;border-top:1px solid var(--line);
+             font-size:.875rem;color:var(--ink-2);min-height:60px}
+  .empty{padding:28px 18px;color:var(--ink-2);text-align:center;font-size:.9375rem}
+  .foot{max-width:var(--col-w);margin:0 auto;padding:18px 0 28px;color:var(--ink-2);font-size:.8125rem;text-align:center}
+
+  /* ===================== MODAL ===================== */
+  .modal-bg{position:fixed;inset:0;background:rgba(20,19,17,.45);display:none;align-items:center;justify-content:center;z-index:100}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--surface);color:var(--ink);border-radius:14px;width:min(640px,92vw);max-height:80vh;overflow:auto;padding:20px 22px;box-shadow:var(--shadow);border:1px solid var(--line)}
+  .modal h3{margin:0 0 10px;font-size:1.125rem}
+  .modal pre{white-space:pre-wrap;font:inherit;font-size:.9375rem;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0 0 12px}
+  .cmp{width:100%;border-collapse:collapse;font-size:.9375rem;margin-bottom:12px}
+  .cmp th,.cmp td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+  .cmp th{color:var(--ink-2);font-weight:500;width:28%}
+  .wf-note{font-size:.8125rem;color:var(--ink-2);margin-top:-4px;margin-bottom:10px}
+  .modal-foot{text-align:right}
+
+  /* ===================== v4 ADDITIONS ===================== */
+  /* Wide grid: trial | nearest site | eligibility | study evidence */
+  .cols,.trow{grid-template-columns:32px minmax(0,1fr) 132px 112px 120px;gap:12px}
+  .right{display:contents}
+  .next{white-space:normal}
+  .dist-inline{display:none}
+  .cols .r{text-align:center}
+
+  /* Study evidence (phase-based tier; shape = bar count, not color) */
+  .sev{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.8125rem;color:var(--ink-2);text-align:center;line-height:1.3}
+  .sev .lvl{font-weight:650;color:var(--ink);font-size:.875rem}
+  .bars{display:inline-flex;gap:3px;align-items:flex-end;height:18px}
+  .bars i{width:6px;border-radius:2px;background:var(--track);display:block}
+  .bars i:nth-child(1){height:7px}.bars i:nth-child(2){height:12px}.bars i:nth-child(3){height:18px}
+  .bars i.on{background:var(--ink-2)}
+
+  /* Not checked yet: calm, neutral, no donut */
+  .trial.pending .trow{cursor:default}
+  .trial.pending .trow:hover{background:transparent}
+  .trial.pending .tname{color:var(--ink-2);font-weight:600}
+  .nc{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.875rem;color:var(--ink-2);text-align:center}
+  .nc .ring{width:36px;height:36px;border-radius:50%;border:2px dashed var(--line-2);display:grid;place-items:center;font-size:14px;color:var(--ink-2)}
+  .pend-note{margin-top:6px;font-size:.875rem;color:var(--ink-2);display:inline-flex;gap:6px;align-items:center;border:1px dashed var(--line-2);border-radius:8px;padding:2px 10px}
+  .nc-tag{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);border:1px solid var(--line-2);border-radius:999px;padding:0 8px;margin-left:8px;vertical-align:2px}
+
+  /* Per-rule evidence quotes */
+  .ev{font-size:.8125rem;color:var(--ink-2);margin-top:2px}
+  mark{background:var(--mark-bg);color:var(--ink);border-radius:4px;padding:0 4px}
+
+  /* Preview tag (UI exists, backend doesn't yet) */
+  .preview{display:inline-block;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+           color:var(--ink-2);border:1px dashed var(--line-2);border-radius:999px;padding:0 7px;margin-left:6px;vertical-align:1px}
+  .is-preview{opacity:1}
+  .is-preview .tg::before{background:var(--track)}
+
+  /* Biomarker chip editor */
+  .bio-ed{display:flex;flex-wrap:wrap;gap:6px;border:1px solid var(--line-2);border-radius:8px;padding:6px;background:var(--bg)}
+  .bchip{display:inline-flex;align-items:center;border-radius:999px;background:var(--chip);font-size:.875rem;color:var(--ink)}
+  .bchip button{border:0;background:transparent;min-height:40px;padding:0 4px 0 10px;border-radius:999px}
+  .bchip button.x{padding:0 10px 0 4px;font-size:1rem;color:var(--ink-2);min-width:40px}
+  .bchip input{border:0;background:var(--surface);height:40px;border-radius:999px;padding:0 10px;width:130px}
+  .bio-ed .add{flex:1;min-width:90px;border:0;background:transparent;height:40px;padding:0 6px}
+
+  .photo-box{border:1px dashed var(--line-2);border-radius:10px;padding:10px;font-size:.875rem;color:var(--ink-2);margin-top:8px}
+  .photo-box input{margin-top:6px;font-size:.8125rem;max-width:100%}
+
+  .unlock{font-size:.875rem;color:var(--ink-2)}
+  .unlock b{color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--tip-bg);color:var(--tip-ink);
+         padding:10px 16px;border-radius:10px;font-size:.9375rem;z-index:120;box-shadow:var(--shadow);display:none;max-width:90vw}
+  .toast.show{display:block}
+  .scrim{position:fixed;inset:var(--top-h) 0 0 0;background:rgba(20,19,17,.28);z-index:25;display:none}
+  .modal .mbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+  .modal .mbtns .muted{margin-right:auto}
+
+  /* ===================== NARROW (half-screen demo, ~700px) ===================== */
+  @media (max-width: 900px){
+    :root{--top-h:138px}
+    .top{flex-wrap:wrap;align-content:center;row-gap:8px;column-gap:10px;padding:8px 14px}
+    .top .sp{display:none}
+    .top .saved{margin-left:auto;height:44px}
+    .saved .lbl-long{display:none}
+    .badge{order:9;width:100%;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .badge .id{gap:10px}
+    .chips{flex-wrap:wrap}
+    .main{padding-left:12px;padding-right:12px}
+    .qwrap{padding:12px 0 10px}
+    .qs{grid-template-columns:1fr;gap:6px}
+    .q{min-height:52px;padding:6px 6px 6px 10px}
+    .q p small{display:inline;margin-left:6px}
+    .cols,.trow{grid-template-columns:24px minmax(0,1fr) 108px;gap:10px}
+    .cols .c-site,.cols .c-sev{display:none}
+    .cols .c-elig::after{content:" · evidence"}
+    .trow{padding:12px 12px;min-height:0}
+    .trow > .dist{display:none}
+    .dist-inline{display:block;font-size:.875rem;color:var(--ink-2)}
+    .right{display:flex;flex-direction:column;align-items:center;gap:6px}
+    .sev{flex-direction:row;gap:6px}
+    .sev .sub{display:none}
+    .sev .lvl{font-size:.8125rem;font-weight:600}
+    .detail{padding:4px 12px 16px 12px}
+    .list-top{flex-wrap:wrap;padding:12px}
+    .list-foot{padding:10px 12px}
+    .rail{box-shadow:var(--shadow)}
+    .rail.open ~ .scrim{display:block}
+  }
+
+  /* ===================== v4.1 LIQUID GLASS ===================== */
+  :root, [data-theme="light"]{
+    --page-grad: radial-gradient(1200px 700px at 12% -10%, #cfe6f1 0%, rgba(207,230,241,0) 60%),
+                 radial-gradient(900px 600px at 95% 10%, #dcebef 0%, rgba(220,235,239,0) 55%),
+                 radial-gradient(1000px 800px at 50% 110%, #e3edf0 0%, rgba(227,237,240,0) 60%),
+                 linear-gradient(180deg, #eef2f1 0%, #f3f1ec 100%);
+    --glass-card: rgba(250,249,246,.80); --glass-bar: rgba(196,226,240,.78); --glass-pill: rgba(232,243,248,.72);
+    --glass-inner: rgba(250,249,246,.62);
+    --spec: rgba(255,255,255,.75); --edge: rgba(255,255,255,.55);
+    --glass-shadow: 0 1px 2px rgba(30,50,60,.06), 0 8px 24px rgba(30,50,60,.08), 0 24px 60px rgba(30,50,60,.06);
+  }
+  [data-theme="dark"]{
+    --page-grad: radial-gradient(1200px 700px at 12% -10%, #17394a 0%, rgba(23,57,74,0) 60%),
+                 radial-gradient(900px 600px at 95% 10%, #13303d 0%, rgba(19,48,61,0) 55%),
+                 linear-gradient(180deg, #111b20 0%, #161a1c 100%);
+    --glass-card: rgba(32,38,41,.78); --glass-bar: rgba(28,58,73,.78); --glass-pill: rgba(43,79,97,.70);
+    --glass-inner: rgba(40,46,49,.62);
+    --spec: rgba(255,255,255,.10); --edge: rgba(255,255,255,.08);
+    --glass-shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35), 0 30px 70px rgba(0,0,0,.25);
+  }
+  html, body{background:var(--bg)}
+  body{background:var(--page-grad);min-height:100vh}
+  .glass, .top, .qcard, .list, .rail, .modal, .saved, .badge, .chip, .toast-g{
+    -webkit-backdrop-filter:blur(22px) saturate(170%); backdrop-filter:blur(22px) saturate(170%);
+  }
+  .top{background:var(--glass-bar);border-bottom:1px solid var(--edge);box-shadow:inset 0 -1px 0 var(--edge), 0 6px 24px rgba(30,50,60,.08)}
+  .qwrap{background:transparent}
+  .qcard,.list{background:var(--glass-card);border:1px solid var(--edge);border-radius:20px;
+               box-shadow:inset 0 1px 0 var(--spec), var(--glass-shadow)}
+  .qcard{border-left:4px solid var(--accent)}
+  .list{overflow:hidden}
+  .q{background:var(--glass-inner);border:1px solid var(--edge);border-radius:14px;box-shadow:inset 0 1px 0 var(--spec)}
+  .saved{background:var(--glass-pill);border:1px solid var(--edge);box-shadow:inset 0 1px 0 var(--spec), 0 4px 14px rgba(30,50,60,.08)}
+  .badge{background:var(--glass-pill);border:1px solid var(--edge);border-radius:18px;box-shadow:inset 0 1px 0 var(--spec), 0 4px 14px rgba(30,50,60,.08)}
+  .chip{background:var(--glass-pill);border:1px solid var(--edge);box-shadow:inset 0 1px 0 var(--spec)}
+  .top .icon-btn{background:var(--glass-pill);border-color:var(--edge);border-radius:14px;box-shadow:inset 0 1px 0 var(--spec)}
+  .rail{background:var(--glass-card);border-right:1px solid var(--edge);box-shadow:inset -1px 0 0 var(--spec), var(--glass-shadow)}
+  .modal{background:var(--glass-card);border:1px solid var(--edge);border-radius:22px;box-shadow:inset 0 1px 0 var(--spec), var(--glass-shadow)}
+  .seg{border-radius:999px;border-color:var(--edge);background:var(--glass-inner);box-shadow:inset 0 1px 0 var(--spec)}
+  .btn{border-radius:999px;background:var(--glass-inner);border-color:var(--line-2);box-shadow:inset 0 1px 0 var(--spec)}
+  .btn.pri{background:var(--accent)}
+  .next{border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+  [data-theme="dark"] .next{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+  .pend-note{border-radius:999px}
+  .trow:hover,.trial.open .trow,.detail{background:rgba(239,235,226,.55)}
+  [data-theme="dark"] .trow:hover,[data-theme="dark"] .trial.open .trow,[data-theme="dark"] .detail{background:rgba(48,46,43,.55)}
+  details.grp{background:var(--glass-inner);border-color:var(--edge);border-radius:14px}
+  .trial.pending .trow:hover{background:transparent}
+
+  /* Results line: no wrap at full width */
+  .cols,.trow{grid-template-columns:32px minmax(0,1fr) 124px 108px 148px}
+  .sev .sub{white-space:nowrap;font-size:.75rem}
+  @media (max-width: 900px){ .cols,.trow{grid-template-columns:24px minmax(0,1fr) 108px} }
+
+  /* Solid fallbacks */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+    :root, [data-theme="light"]{--glass-card:#faf8f3; --glass-bar:#c4e2f0; --glass-pill:#dbeef6; --glass-inner:#f4f1ea}
+    [data-theme="dark"]{--glass-card:#252421; --glass-bar:#1f3d4d; --glass-pill:#264858; --glass-inner:#2d2b28}
+  }
+  @media (prefers-reduced-transparency: reduce){
+    :root, [data-theme="light"]{--glass-card:#faf8f3; --glass-bar:#c4e2f0; --glass-pill:#dbeef6; --glass-inner:#f4f1ea}
+    [data-theme="dark"]{--glass-card:#252421; --glass-bar:#1f3d4d; --glass-pill:#264858; --glass-inner:#2d2b28}
+    .glass, .top, .qcard, .list, .rail, .modal, .saved, .badge, .chip{-webkit-backdrop-filter:none;backdrop-filter:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= TOP BAR / PATIENT BAR (iceberg blue) ======================= -->
+<header class="top">
+  <button class="icon-btn t" id="rail-toggle" aria-expanded="false" aria-controls="rail" aria-label="Filters and patient details" title="Filters & patient details">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/></svg>
+  </button>
+  <div class="wm">Trial<span>Radar</span></div>
+
+  <div class="sp"></div>
+
+  <!-- Manual time saved (per case) -->
+  <div class="saved" id="saved" aria-live="polite">
+    <span aria-hidden="true">⏱</span>
+    <div><span class="big" id="saved-hrs">~0.0 hrs</span> <span class="lbl">saved<span class="lbl-long"> on this search vs. manual review</span></span></div>
+    <button class="info" id="saved-info" aria-label="How time saved is estimated"><span class="ring" aria-hidden="true">i</span>
+      <div class="pop" role="tooltip">
+        <h4>How "time saved" is estimated</h4>
+        <code id="formula-text"></code>
+        <div id="formula-live"></div>
+        <small><span class="ph">Placeholder assumptions.</span> These minute values are not research findings; replace them with a sourced benchmark before any external claim.</small>
+      </div>
+    </button>
+  </div>
+
+  <div class="sp"></div>
+
+  <button class="icon-btn t" id="theme-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Toggle dark mode"><span id="theme-ico" aria-hidden="true">☾</span></button>
+
+  <!-- Masked patient badge (synthetic demo values) -->
+  <div class="badge" aria-label="Current patient, identifiers masked">
+    <div class="id">
+      <span class="src"><i></i>EHR record</span>
+      <b>SAN•••</b>
+      <span><span class="k">DOB</span>••/••/1964</span>
+      <span><span class="k">MRN</span>•••• 4821</span>
+    </div>
+    <div class="chips" id="patient-chips"></div>
+  </div>
+</header>
+
+<!-- ======================= COLLAPSIBLE RAIL (overlay) ======================= -->
+<aside class="rail" id="rail" aria-label="Filters and patient details" inert>
+  <div class="rail-in">
+    <section>
+      <h3>Patient source</h3>
+      <div class="seg" id="src-seg">
+        <button data-src="typed" class="on">Typed</button><button data-src="photo">Photo of report (beta)</button>
+      </div>
+      <div class="photo-box" id="photo-box" hidden>
+        A photo or PDF is read on this device, then fills the fields below for you to check.
+        <input type="file" id="photo-file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.txt" aria-label="Choose report photo or PDF">
+      </div>
+    </section>
+    <section>
+      <h3>Travel distance</h3>
+      <div class="seg" id="dist-seg">
+        <button data-d="25" data-tier="Local">Local<br><small>≤25 mi</small></button><button data-d="100" data-tier="Regional" class="on">Regional<br><small>≤100 mi</small></button><button id="nationwide" data-preview="Nationwide search" aria-label="Nationwide (preview, not available yet)">Nationwide<br><span class="preview" style="margin:0">Preview</span></button>
+      </div>
+    </section>
+    <section>
+      <h3>Trial filters</h3>
+      <div class="row-ctl"><span>Phase</span>
+        <div class="cbs">
+          <label><input type="checkbox" class="ph" value="1" checked> 1</label>
+          <label><input type="checkbox" class="ph" value="2" checked> 2</label>
+          <label><input type="checkbox" class="ph" value="3" checked> 3</label>
+        </div>
+      </div>
+      <div class="row-ctl"><span>Recruiting only</span><button class="tg on" id="recruiting" aria-pressed="true" aria-label="Recruiting only"></button></div>
+      <div class="row-ctl"><span>What if: new scan within 14 days</span><button class="tg" id="whatif" aria-pressed="false" aria-label="What if new scan within 14 days"></button></div>
+    </section>
+    <section>
+      <h3>Patient details</h3>
+      <div class="grid2">
+        <div class="fld"><label for="f-age">Age</label><input id="f-age" value="62"></div>
+        <div class="fld"><label for="f-sex">Sex</label><select id="f-sex"><option>F</option><option>M</option></select></div>
+      </div>
+      <div class="fld"><label for="f-dx">Diagnosis</label><input id="f-dx" value="NSCLC"></div>
+      <div class="grid2">
+        <div class="fld"><label for="f-stage">Stage</label><input id="f-stage" value="IIIB"></div>
+        <div class="fld"><label for="f-ecog">ECOG</label><input id="f-ecog" value="1"></div>
+      </div>
+      <div class="fld"><label id="bio-lbl">Biomarkers <span class="muted">(click a chip to edit)</span></label>
+        <div class="bio-ed" id="bio-ed" role="group" aria-labelledby="bio-lbl"></div></div>
+      <div class="fld"><label for="f-prior">Prior treatment</label><input id="f-prior" value="Osimertinib (progressed)"></div>
+      <div class="grid2">
+        <div class="fld"><label for="f-city">City</label><input id="f-city" value="Austin, TX"></div>
+        <div class="fld"><label for="f-scan">Last scan (days)</label><input id="f-scan" value="47" inputmode="numeric"></div>
+      </div>
+      <div class="muted">Pulled from the EHR record. Edits apply to this search only and re-rank instantly.</div>
+    </section>
+    <section class="is-preview">
+      <h3>Weekly inbox <span class="preview">Preview</span></h3>
+      <div class="row-ctl"><span>New matches for this patient, in TrialRadar · refreshes every Friday</span>
+        <button class="tg" id="weekly" aria-pressed="false" aria-label="Weekly inbox (preview, not available yet)" data-preview="Weekly inbox"></button></div>
+    </section>
+    <section class="muted">Source: ClinicalTrials.gov (demo cache) · checked just now</section>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<!-- ======================= MAIN COLUMN ======================= -->
+<main class="main">
+  <div class="col">
+    <div class="qwrap">
+      <section class="qcard" aria-label="Questions for the clinician">
+        <div class="qhead"><b>Questions for the clinician</b><span id="q-sub">2 open · each answer re-ranks the list</span></div>
+        <div class="qs" id="questions"></div>
+        <div class="unlock" id="unlock"></div>
+      </section>
+    </div>
+
+    <section class="list" aria-label="Matching trials">
+      <div class="list-top"><b id="list-title">Matching trials</b><span id="list-sub"></span></div>
+      <div class="cols" aria-hidden="true"><span></span><span>Trial · next step</span><span class="c-site">Nearest site</span><span class="r c-elig">Eligibility</span><span class="r c-sev">Study evidence</span></div>
+      <div id="trials"></div>
+      <div class="list-foot"><span id="more-label"></span><button class="btn t" id="check-next">Check next 5</button></div>
+    </section>
+  </div>
+  <footer class="foot">Suggestions for the treating clinician to confirm. No patient data leaves this device · built for HIPAA-aligned use · Not a medical device.</footer>
+</main>
+
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-h"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+   TIME-SAVED ESTIMATE
+   ASSUMPTION constants below are PLACEHOLDERS, not sourced benchmarks.
+   Replace with a sourced benchmark (e.g. a published time-motion study
+   of manual trial screening) before showing to anyone as a claim.
+   ===================================================================== */
+const ASSUMPTION_MIN_SEARCH_SETUP     = 15; // PLACEHOLDER: minutes to search a registry for this patient once
+const ASSUMPTION_MIN_PER_TRIAL_SCREEN = 5;  // PLACEHOLDER: minutes to open & skim one candidate trial
+const ASSUMPTION_MIN_PER_CRITERION    = 2;  // PLACEHOLDER: minutes to check one criterion against the chart
+const ASSUMPTION_MIN_REVIEW_PER_RESULT= 1;  // PLACEHOLDER: minutes the clinician still spends reviewing each shown result
+
+function estimateMinutesSaved(trialsChecked, criteriaReviewed, resultsShown){
+  if (trialsChecked === 0) return 0;
+  const manual = ASSUMPTION_MIN_SEARCH_SETUP
+               + trialsChecked    * ASSUMPTION_MIN_PER_TRIAL_SCREEN
+               + criteriaReviewed * ASSUMPTION_MIN_PER_CRITERION;
+  const withTool = resultsShown * ASSUMPTION_MIN_REVIEW_PER_RESULT;
+  return Math.max(0, manual - withTool);
+}
+const STRONG_MATCH_PCT = 70;   // shows a check shape at or above this
+
+/* =====================================================================
+   DEMO DATA: 5 trials from v1. Counts (met / not met / needs info)
+   match v1's pills. Criteria text for trial #1 comes from v1; the rest
+   are illustrative placeholders sized to match v1's counts.
+   q: linked clinician question. dyn: recomputed from patient fields.
+   gate: if this criterion is NOT MET, the trial is dropped from the list (required biomarker).
+   ev: which part of the record to quote as evidence for this rule.
+   kind: "hard" = unlikely to change; "fix" = something the clinician can act on.
+   ===================================================================== */
+const EGFR = {t:"EGFR sensitizing mutation (exon 19 del or L858R)", dyn:"egfr", gate:true, ev:"egfr"};
+const TRIALS = [
+  { nct:"NCT07680790", phase:"P3", phases:[3], drug:"Iza-bren + Osi", sponsor:"Bristol Myers Squibb",
+    summary:"Aims to improve control by adding an ADC to osimertinib",
+    title:"Study of Izalontamab Brengitecan (BMS-986507) in Combination With Osimertinib Versus Osimertinib Monotherapy or Osimertinib in Combination With Platinum-based Chemotherapy for EGFRmt Non-small Cell Lung Cancer (IZABRIGHT-Lung02)",
+    city:"San Antonio, TX", site:"San Antonio", mi:74, recruiting:true,
+    criteria:[
+      {s:"met", t:"Non-squamous NSCLC, stage IIIB–IV", dyn:"stageIIIBplus", ev:"stage"},
+      {...EGFR},
+      {s:"met", t:"ECOG 0–1", dyn:"ecog01", ev:"ecog"},
+      {s:"unk", t:"brain metastases status (recent MRI)", q:"brain_mets"},
+      {s:"unk", t:"history of ILD / pneumonitis"},
+      {s:"unk", t:"clinically significant cardiac disease"},
+      {s:"unk", t:"organ function labs"},
+      {s:"unk", t:"other protocol-defined criteria"}
+    ]},
+  { nct:"NCT06350097", phase:"P3", phases:[3], drug:"Dato-DXd + Osi", sponsor:"AstraZeneca",
+    summary:"Aims to deepen first-line control by adding an ADC",
+    title:"Phase III, Open-label Study of First-line Osimertinib With or Without Datopotamab Deruxtecan for EGFRm Locally Advanced or Metastatic Non-small Cell Lung Cancer",
+    city:"Woodway, TX", site:"Woodway", mi:91, recruiting:true,
+    criteria:[
+      {s:"met", t:"Non-squamous NSCLC", ev:"dx"},
+      {s:"met", t:"Locally advanced or metastatic (stage IIIB+)", dyn:"stageIIIBplus", ev:"stage"},
+      {...EGFR},
+      {s:"met", t:"ECOG 0–1", dyn:"ecog01", ev:"ecog"},
+      {s:"met", t:"Age 18 or older", dyn:"age18", ev:"age"},
+      {s:"no",  t:"No prior EGFR TKI allowed", flag:"Already received an EGFR TKI (osimertinib)", kind:"hard", next:"Consider post-osimertinib trials instead", ev:"prior"},
+      {s:"unk", t:"brain metastases status (recent MRI)", q:"brain_mets"},
+      {s:"unk", t:"measurable disease on recent imaging", q:"measurable"},
+      {s:"unk", t:"history of ILD / pneumonitis"},
+      {s:"unk", t:"creatinine clearance"},
+      {s:"unk", t:"cardiac function (LVEF)"},
+      {s:"unk", t:"6 other protocol criteria", n:6}
+    ]},
+  { nct:"NCT06667076", phase:"P2", phases:[2], drug:"Ami + Laz", sponsor:"Johnson & Johnson",
+    summary:"Aims to find amivantamab's best partner for EGFR+ NSCLC",
+    title:"A Study of Amivantamab in Combination With Lazertinib, or Amivantamab in Combination With Platinum-Based Chemotherapy, for Common Epidermal Growth Factor Receptor (EGFR)-Mutated Locally Advanced or Metastatic Non-Small Cell Lung Cancer (NSCLC)",
+    city:"Austin, TX", site:"Austin", mi:0, recruiting:true,
+    criteria:[
+      {...EGFR},
+      {s:"met", t:"ECOG 0–1", dyn:"ecog01", ev:"ecog"},
+      {s:"no",  t:"Advanced or metastatic stage", dyn:"stageIV", ev:"stage"},
+      {s:"unk", t:"brain metastases status (recent MRI)", q:"brain_mets"},
+      {s:"unk", t:"history of ILD / pneumonitis"},
+      {s:"unk", t:"cardiac function"},
+      {s:"unk", t:"organ function labs"},
+      {s:"unk", t:"details of prior therapy lines"},
+      {s:"unk", t:"2 other protocol criteria", n:2}
+    ]},
+  { nct:"NCT07005102", phase:"P2/3", phases:[2,3], drug:"Temab-A + Osi", sponsor:"AbbVie",
+    summary:"Aims to strengthen first-line osimertinib with a c-Met ADC",
+    title:"A Study to Assess Adverse Events, Change in Disease Activity of Intravenous Telisotuzumab Adizutecan in Combination With Osimertinib as First-Line Treatment in Adult Participants With Locally Advanced Unresectable or Metastatic EGFR-Mutated Non-Squamous Non-Small Cell Lung Cancer",
+    city:"Austin, TX", site:"Austin", mi:0, recruiting:true,
+    criteria:[
+      {s:"met", t:"Non-squamous NSCLC", ev:"dx"},
+      {...EGFR},
+      {s:"met", t:"ECOG 0–1", dyn:"ecog01", ev:"ecog"},
+      {s:"met", t:"Age 18 or older", dyn:"age18", ev:"age"},
+      {s:"no",  t:"Imaging within 14 days", dyn:"scan14", ev:"scan"},
+      {s:"no",  t:"First-line only (no prior systemic therapy)", flag:"First-line only; already received osimertinib", kind:"hard", next:"First-line only; consider post-osimertinib trials", ev:"prior"},
+      {s:"unk", t:"measurable disease on recent imaging", q:"measurable"},
+      {s:"unk", t:"c-Met protein expression"},
+      {s:"unk", t:"history of ILD / pneumonitis"},
+      {s:"unk", t:"organ function labs"},
+      {s:"unk", t:"5 other protocol criteria", n:5}
+    ]},
+  { nct:"NCT05579366", phase:"P1/2", phases:[1,2], drug:"Rina-S", sponsor:"Genmab",
+    summary:"Aims to find a safe dose and early activity of a new ADC",
+    title:"Rinatabart Sesutecan (Rina-S, PRO1184, GEN1184) for Advanced Solid Tumors (GCT1184-01/ PRO1184-001)",
+    city:"Austin, TX", site:"Austin", mi:0, recruiting:true,
+    criteria:[
+      {s:"met", t:"Advanced solid tumor", ev:"dx"},
+      {s:"met", t:"ECOG 0–1", dyn:"ecog01", ev:"ecog"},
+      {s:"met", t:"Age 18 or older", dyn:"age18", ev:"age"},
+      {s:"no",  t:"HER2-positive cohort", flag:"No HER2-positive result on record; this cohort requires it", kind:"fix", next:"Order HER2 test to check this cohort", ev:"bio"},
+      {s:"no",  t:"Tumor type in an open cohort", flag:"Tumor type not in an open cohort", kind:"hard", next:"Ask site about an open lung cancer cohort", ev:"dx"},
+      {s:"no",  t:"Prior therapy lines within cohort range", kind:"hard", ev:"prior"},
+      {s:"no",  t:"Tissue sample within protocol window", kind:"fix"},
+      {s:"unk", t:"measurable disease on recent imaging", q:"measurable"},
+      {s:"unk", t:"folate receptor-α expression"},
+      {s:"unk", t:"organ function labs"},
+      {s:"unk", t:"26 other protocol criteria", n:26}
+    ]}
+];
+/* Study evidence: phase-based tier only (registry phase). Published-results lookup is NOT wired yet. */
+const EVIDENCE_TIER = { "P3":{lvl:"Late-stage",bars:3}, "P2/3":{lvl:"Mid–late",bars:2}, "P2":{lvl:"Mid-stage",bars:2}, "P1/2":{lvl:"Early",bars:1}, "P1":{lvl:"Early",bars:1} };
+const RESULTS_PLACEHOLDER = "Results: not linked yet";   // PLACEHOLDER until results data is connected
+
+// v1 said "10 found, 5 checked". The next 5 are simulated: all meet 0 criteria, so they are screened out (never shown).
+const UNCHECKED = [ {criteria:12},{criteria:9},{criteria:14},{criteria:20},{criteria:11} ];
+
+const QUESTIONS = [
+  {id:"brain_mets", text:"Brain metastases on recent MRI?", good:"no", ask:"Confirm brain MRI status",
+   failFlag:"Brain metastases reported; trial limits active CNS disease", failKind:"fix", failNext:"Ask site if treated brain mets are allowed"},
+  {id:"measurable", text:"Measurable disease on recent imaging?", good:"yes", ask:"Confirm measurable disease on recent imaging",
+   failFlag:"No measurable disease; trial requires it", failKind:"hard", failNext:"Recheck after the next imaging study"}
+];
+
+/* ===================== STATE ===================== */
+const state = {
+  answers:{brain_mets:"unknown", measurable:"unknown"},
+  dist:100, phases:new Set([1,2,3]), recruitingOnly:true, whatIf:false,
+  open:null, listed:new Set(), scored:new Set(), extraChecked:0, extraCriteria:0,
+  bio:["EGFR L858R","PD-L1 40%"], editingBio:-1, patient:{}
+};
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function readPatient(){
+  const v = id => document.getElementById(id).value.trim();
+  state.patient = { age:v("f-age"), sex:v("f-sex"), dx:v("f-dx"), stage:v("f-stage").toUpperCase(), ecog:v("f-ecog"),
+    bio:state.bio.slice(), prior:v("f-prior"), city:v("f-city"), scan:parseInt(v("f-scan"),10) };
+}
+
+/* Evidence quotes: the exact record text a rule was judged on. */
+function evQuote(key){
+  const p = state.patient;
+  switch(key){
+    case "stage": return p.stage ? `Stage ${p.stage}` : null;
+    case "ecog":  return p.ecog ? `ECOG ${p.ecog}` : null;
+    case "age":   return p.age ? `Age ${p.age}` : null;
+    case "dx":    return p.dx || null;
+    case "prior": return p.prior || null;
+    case "scan":  return state.whatIf ? "New scan (what-if)" : (isNaN(p.scan) ? null : `Last scan ${p.scan} days ago`);
+    case "egfr":  return p.bio.find(b=>/^egfr\b/i.test(b)) || null;
+    case "bio":   return p.bio.length ? p.bio.join(", ") : null;
+  }
+  return null;
+}
+
+/* ===================== SCORING (same as v2/v3; plus EGFR gate) ===================== */
+function evalCriterion(c){
+  const p = state.patient;
+  let s = c.s, flag = c.flag || null, kind = c.kind || "hard", next = c.next || null, t = c.t;
+  if (c.q){
+    const Q = QUESTIONS.find(q=>q.id===c.q), a = state.answers[c.q];
+    if (a === "unknown") s = "unk"; else if (a === Q.good) s = "met";
+    else { s = "no"; flag = Q.failFlag; kind = Q.failKind; next = Q.failNext; }
+  }
+  if (c.dyn === "scan14"){
+    const days = state.whatIf ? 0 : p.scan;
+    if (!isNaN(days) && days <= 14) s = "met";
+    else { s = "no"; kind="fix"; next="Order a scan within 14 days to qualify"; flag = `Last scan ${isNaN(days)?"date unknown":days+" days ago"}; trial needs within 14`; }
+  }
+  if (c.dyn === "stageIV"){
+    if (p.stage.startsWith("IV")) s="met";
+    else { s="no"; kind="fix"; next="Confirm stage IV to qualify"; flag=`Stage ${p.stage||"?"} on record; trial needs stage IV / metastatic`; }
+  }
+  if (c.dyn === "stageIIIBplus"){
+    s = /^(IIIB|IIIC|IV)/.test(p.stage) ? "met" : "no";
+    if (s==="no"){ kind="fix"; next="Confirm stage IIIB or later to qualify"; flag=`Stage ${p.stage||"?"} on record; trial needs IIIB or later`; }
+  }
+  if (c.dyn === "ecog01"){ const e=parseInt(p.ecog,10); s = isNaN(e) ? "unk" : (e<=1 ? "met" : "no"); if(s==="no"){flag=`ECOG ${e}; trial needs 0–1`; kind="hard"; next="Revisit if performance status improves";} if(s==="unk") t="ECOG performance status"; }
+  if (c.dyn === "age18"){ const a=parseInt(p.age,10); s = isNaN(a) ? "unk" : (a>=18 ? "met" : "no"); if(s==="unk") t="age"; }
+  if (c.dyn === "egfr"){
+    const b = p.bio.find(x=>/^egfr\b/i.test(x));
+    if (!b){ s="unk"; t="EGFR mutation status"; }
+    else if (/none|neg|negative|wild|\bwt\b|not detected/i.test(b)){ s="no"; kind="hard"; flag="No EGFR mutation on record; trial requires one"; next="Confirm EGFR testing; trial requires a mutation"; }
+    else if (/l858r|exon\s*19|ex19|del\s*19|19\s*del/i.test(b)) s="met";
+    else { s="unk"; t="whether the EGFR mutation is a sensitizing type"; }
+  }
+  return {...c, t, s, kind, next, flag: s==="no" ? flag : null, n:c.n||1, quote: c.ev ? evQuote(c.ev) : null};
+}
+function score(t){
+  const crit = t.criteria.map(evalCriterion);
+  const count = k => crit.filter(c=>c.s===k).reduce((a,c)=>a+c.n,0);
+  const met=count("met"), no=count("no"), unk=count("unk"), total=met+no+unk;
+  const flags = crit.filter(c=>c.s==="no" && c.flag).map(c=>c.flag);
+  const gateFail = crit.some(c=>c.gate && c.s==="no");
+  return {crit, met, no, unk, total, pct: Math.round(100*met/total), flags, gateFail};
+}
+
+/* ===================== NEXT STEP (derived, live) =====================
+   1) hard blocker → "Skip for now: …"  2) fixable blocker → its action
+   3) open clinician question → "Confirm …"  4) otherwise → "Refer to <site> site …" */
+function nextStep(t, sc){
+  const fails = sc.crit.filter(c=>c.s==="no");
+  const hard = fails.find(c=>c.kind==="hard" && c.next); if (hard) return {text:hard.next, hard:true};
+  const fix  = fails.find(c=>c.kind==="fix"  && c.next); if (fix)  return {text:fix.next, hard:false};
+  const openQs = QUESTIONS.filter(Q=>sc.crit.some(c=>c.q===Q.id && c.s==="unk"));
+  if (openQs.length) return {text:openQs.map(q=>q.ask).join(" · "), hard:false};
+  const rest = sc.unk;
+  return {text:`Refer to ${t.site} site` + (rest ? ` · ${rest} item${rest>1?"s":""} to confirm at screening` : ""), hard:false};
+}
+
+/* Okabe-Ito-based 3-stop scale: vermilion (0%) → orange (50%) → bluish green (100%). */
+function hexToRgb(h){ h=h.trim().replace("#",""); return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16)); }
+function scaleColor(pct){
+  const cs = getComputedStyle(document.documentElement);
+  const L=hexToRgb(cs.getPropertyValue("--elig-low")), M=hexToRgb(cs.getPropertyValue("--elig-mid")), H=hexToRgb(cs.getPropertyValue("--elig-high"));
+  const mix=(a,b,t)=>a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+  const c = pct<=50 ? mix(L,M,pct/50) : mix(M,H,(pct-50)/50);
+  return `rgb(${c.join(",")})`;
+}
+function donut(pct){
+  const r=16, C=2*Math.PI*r, col=scaleColor(pct);
+  return `<svg width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+    <circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--track)" stroke-width="7"/>
+    <circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="7"
+      stroke-dasharray="${(C*pct/100).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 21 21)"/>
+  </svg>`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+
+/* ===================== FILTERS / ORDER ===================== */
+const passFilters = t => t.mi <= state.dist && t.phases.some(p=>state.phases.has(p)) && (!state.recruitingOnly || t.recruiting);
+function scoredRows(){
+  return TRIALS.filter(t=>state.scored.has(t.nct)).map(t=>({t, sc:score(t)}))
+    .filter(x=>x.sc.met > 0 && !x.sc.gateFail)          // drop: 0 criteria met, or a required biomarker is absent
+    .filter(x=>passFilters(x.t))
+    .sort((a,b)=>b.sc.pct-a.sc.pct || a.t.mi-b.t.mi);
+}
+const pendingRows = () => TRIALS.filter(t=>state.listed.has(t.nct) && !state.scored.has(t.nct) && passFilters(t));
+
+/* ===================== RENDER ===================== */
+let prevPct = {};
+function focusKey(){
+  const a = document.activeElement; if (!a || a===document.body) return null;
+  if (a.dataset.toggle) return `[data-toggle="${a.dataset.toggle}"]`;
+  if (a.dataset.q) return `[data-q="${a.dataset.q}"][data-v="${a.dataset.v}"]`;
+  if (a.dataset.act) return `[data-act="${a.dataset.act}"][data-nct="${a.dataset.nct}"]`;
+  if (a.matches("details.grp summary")){ const t=a.closest(".trial"), g=a.parentElement.dataset.g; return `.trial[data-nct="${t.dataset.nct}"] details.grp[data-g="${g}"] summary`; }
+  return null;
+}
+function render(){
+  const fk = focusKey();
+  const openGroups = {};
+  document.querySelectorAll(".trial.open details.grp").forEach(d=>{ openGroups[d.dataset.g] = d.open; });
+  readPatient(); renderChips(); renderBioEditor(); renderQuestions();
+  const rows = scoredRows(), pend = pendingRows();
+  const el = document.getElementById("trials");
+  if (!rows.length && !pend.length){
+    el.innerHTML = `<div class="empty">${state.listed.size ? "No trials match these filters or the patient's biomarkers. Try a wider distance in the filters panel." : "Waiting for the search to list trials…"}</div>`;
+  } else {
+    el.innerHTML = rows.map(({t,sc},i)=>rowHTML(t,sc,openGroups,i,rows)).join("") + pend.map(pendingHTML).join("");
+  }
+  rows.forEach(({t,sc})=>{
+    if (prevPct[t.nct]!==undefined && prevPct[t.nct]!==sc.pct && !reduceMotion){
+      const d=document.querySelector(`.trial[data-nct="${t.nct}"]`); if (d){ d.classList.add("changed"); setTimeout(()=>d.classList.remove("changed"),900); }
+    }
+    prevPct[t.nct]=sc.pct;
+  });
+  const scoredAll = TRIALS.filter(t=>state.scored.has(t.nct)).map(t=>score(t));
+  const bioHidden = scoredAll.filter(s=>s.gateFail).length;
+  const filtHidden = TRIALS.filter(t=>state.scored.has(t.nct)).filter(t=>{const s=score(t); return s.met>0 && !s.gateFail && !passFilters(t);}).length;
+  document.getElementById("list-title").textContent = `${rows.length} matching trial${rows.length===1?"":"s"}`;
+  const bits = [`${state.dist<=25?"Local (≤25 mi)":"Regional (≤100 mi)"} · ranked by eligibility`];
+  if (pend.length) bits.push(`${pend.length} not checked yet`);
+  if (filtHidden) bits.push(`${filtHidden} hidden by filters`);
+  if (bioHidden) bits.push(`${bioHidden} need a biomarker not on record`);
+  document.getElementById("list-sub").textContent = bits.join(" · ");
+  const totalChecked = state.scored.size + state.extraChecked, remaining = 10 - totalChecked;
+  document.getElementById("more-label").textContent = remaining>0
+    ? `${totalChecked} of 10 nearby trials checked · ${remaining} more not yet checked`
+    : `All 10 nearby trials checked · ${10-TRIALS.length} met no criteria and are not shown`;
+  document.getElementById("check-next").style.visibility = remaining>0 && state.scored.size===TRIALS.length ? "visible" : "hidden";
+  renderUnlock(rows);
+  renderSaved(rows.length);
+  if (fk){ const f=document.querySelector(fk); f && f.focus({preventScroll:true}); }
+}
+function sevHTML(t){
+  const e = EVIDENCE_TIER[t.phase] || {lvl:"—",bars:0};
+  return `<span class="sev" title="Study evidence: based on trial phase. ${RESULTS_PLACEHOLDER}.">
+    <span class="bars" aria-hidden="true">${[1,2,3].map(i=>`<i class="${i<=e.bars?"on":""}"></i>`).join("")}</span>
+    <span class="lvl">${e.lvl}</span><span class="sub">${RESULTS_PLACEHOLDER}</span></span>`;
+}
+function pendingHTML(t){
+  return `<div class="trial pending" data-nct="${t.nct}">
+    <div class="trow" aria-label="${esc(t.phase)} ${esc(t.drug)}, not checked yet">
+      <span class="chev" aria-hidden="true"></span>
+      <span style="min-width:0">
+        <div class="tname">${esc(t.phase)} · ${esc(t.drug)}</div>
+        <div class="tsum">${esc(t.summary)}</div>
+        <div class="dist-inline">${t.mi} mi · ${esc(t.city)}</div>
+        <div class="pend-note">Eligibility not checked yet</div>
+      </span>
+      <span class="dist"><b>${t.mi} mi</b><div>${esc(t.city)}</div></span>
+      <span class="right">
+        <span class="nc"><span class="ring" aria-hidden="true">–</span>Not checked yet</span>
+        ${sevHTML(t)}
+      </span>
+    </div>
+  </div>`;
+}
+function rowHTML(t,sc,openGroups,rank,rows){
+  const open = state.open===t.nct;
+  let cue = "";
+  if (sc.flags.length) cue = `<span class="cue flag" aria-label="Flagged criterion">!<span class="tip">${sc.flags.map(esc).join("<br>")}</span></span>`;
+  else if (sc.pct >= STRONG_MATCH_PCT) cue = `<span class="cue ok" aria-label="Strong match">✓</span>`;
+  const grp = (key,label,icon,isOpen) => {
+    const items = sc.crit.filter(c=>c.s===key);
+    const n = items.reduce((a,c)=>a+c.n,0); if (!n) return "";
+    const o = openGroups && key in openGroups ? openGroups[key] : isOpen;
+    const li = items.map(c=>{
+      const txt = key==="no" && c.flag ? c.flag : c.t;
+      const ev = c.quote && key!=="unk" ? `<div class="ev">From record: <mark>${esc(c.quote)}</mark></div>` : "";
+      return `<li>${esc(txt)}${c.q && key==="unk" ? ` <span class="ql">· question above</span>`:""}${ev}</li>`;
+    }).join("");
+    return `<details class="grp" data-g="${key}" ${o?"open":""}><summary><span class="car" aria-hidden="true">▶</span>${icon}${label}<span class="ct">${n}</span></summary><ul>${li}</ul></details>`;
+  };
+  const gi = (bg,ch)=>`<span class="gicon" style="background:${bg};color:#1d1c1a" aria-hidden="true">${ch}</span>`;
+  const step = nextStep(t,sc);
+  const cmpRank = rank===0 ? 2 : 1;
+  const cmpLabel = rows.length>1 ? `Compare with #${cmpRank}` : "Compare";
+  return `<div class="trial ${open?"open":""}" data-nct="${t.nct}">
+    <button class="trow t" data-toggle="${t.nct}" aria-expanded="${open}"
+      aria-label="#${rank+1} ${esc(t.phase)} ${esc(t.drug)}, ${sc.pct}% match${sc.flags.length?", flagged: "+esc(sc.flags[0]):""}, ${t.mi} miles, ${esc(t.city)}. Next step: ${esc(step.text)}">
+      <span class="chev" aria-hidden="true">▶</span>
+      <span style="min-width:0">
+        <div class="tname">${esc(t.phase)} · ${esc(t.drug)}</div>
+        <div class="tsum">${esc(t.summary)}</div>
+        <div class="dist-inline">${t.mi} mi · ${esc(t.city)}</div>
+        <div class="next ${step.hard?"skip":""}"><b>Next</b><span class="arr" aria-hidden="true">→</span><span>${esc(step.text)}</span></div>
+      </span>
+      <span class="dist"><b>${t.mi} mi</b><div>${esc(t.city)}</div></span>
+      <span class="right">
+        <span class="elig" title="${sc.met} of ${sc.total} criteria met">${donut(sc.pct)}<span class="pct">${sc.pct}% match ${cue}</span></span>
+        ${sevHTML(t)}
+      </span>
+    </button>
+    <div class="detail">
+      <p class="full-title">${esc(t.title)}</p>
+      <div class="meta">
+        <a href="https://clinicaltrials.gov/study/${t.nct}" target="_blank" rel="noreferrer">${t.nct} ↗</a>
+        <span>${esc(t.sponsor)}</span><span>${t.recruiting?"Recruiting":"Not recruiting"}</span>
+        <span>${sc.met} of ${sc.total} criteria met</span>
+      </div>
+      ${sc.flags.length ? `<div class="notable"><span class="cue flag" aria-hidden="true">!</span><div>${sc.flags.map(esc).join("<br>")}</div></div>` : ""}
+      <div class="groups">
+        ${grp("no","Not met",gi("var(--elig-low)","✕"),true)}
+        ${grp("unk","Needs info",gi("var(--elig-mid)","?"),true)}
+        ${grp("met","Met",gi("var(--elig-high)","✓"),false)}
+      </div>
+      <div class="actions">
+        <button class="btn t" data-act="referral" data-nct="${t.nct}">Draft referral note</button>
+        <button class="btn pri t" data-act="summary" data-nct="${t.nct}">Patient-friendly summary</button>
+        <button class="btn t" data-act="compare" data-nct="${t.nct}" data-cmp="${cmpRank}" ${rows.length>1?"":"disabled"}>${cmpLabel}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function renderChips(){
+  const p = state.patient;
+  const chips = [`${p.age}${p.sex}`, `${p.dx} ${p.stage}`, ...p.bio, p.city].filter(Boolean);
+  document.getElementById("patient-chips").innerHTML = chips.map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+}
+/* Editable biomarker chips: click to edit in place, × to remove, type + Enter to add. */
+function renderBioEditor(){
+  const ed = document.getElementById("bio-ed");
+  if (ed.contains(document.activeElement) && document.activeElement.tagName==="INPUT") return;  // don't clobber typing
+  ed.innerHTML = state.bio.map((b,i)=> i===state.editingBio
+      ? `<span class="bchip"><input data-bio-edit="${i}" value="${esc(b)}" aria-label="Edit biomarker"></span>`
+      : `<span class="bchip"><button data-bio="${i}" aria-label="Edit ${esc(b)}">${esc(b)}</button><button class="x" data-bio-x="${i}" aria-label="Remove ${esc(b)}">×</button></span>`).join("")
+    + `<input class="add" id="bio-add" placeholder="+ add" aria-label="Add biomarker">`;
+  const edIn = ed.querySelector("[data-bio-edit]"); if (edIn){ edIn.focus(); edIn.select(); }
+}
+function commitBioEdit(input){
+  const i = +input.dataset.bioEdit, v = input.value.trim();
+  if (v) state.bio[i] = v; else state.bio.splice(i,1);
+  state.editingBio = -1; input.blur(); render();
+}
+function renderQuestions(){
+  const affected = id => TRIALS.filter(t=>t.criteria.some(c=>c.q===id)).length;
+  document.getElementById("questions").innerHTML = QUESTIONS.map(q=>{
+    const a = state.answers[q.id];
+    return `<div class="q"><p>${esc(q.text)}<small>Affects ${affected(q.id)} trials</small></p>
+      <div class="seg" role="group" aria-label="${esc(q.text)}">${["yes","no","unknown"].map(v=>`<button class="t ${a===v?"on":""}" data-q="${q.id}" data-v="${v}" aria-pressed="${a===v}">${v==="unknown"?"Unknown":v[0].toUpperCase()+v.slice(1)}</button>`).join("")}</div></div>`;
+  }).join("");
+  const open = QUESTIONS.filter(q=>state.answers[q.id]==="unknown").length;
+  document.getElementById("q-sub").textContent = open ? `${open} open · each answer re-ranks the list` : "All answered · list re-ranked";
+}
+/* "What would unlock more trials": open questions + fixable blockers, counted across shown trials. */
+function renderUnlock(rows){
+  const tally = {};
+  QUESTIONS.filter(q=>state.answers[q.id]==="unknown").forEach(q=>{
+    const n = rows.filter(r=>r.sc.crit.some(c=>c.q===q.id && c.s==="unk")).length; if (n) tally[q.ask] = n; });
+  rows.forEach(r=>r.sc.crit.filter(c=>c.s==="no" && c.kind==="fix" && c.next).forEach(c=>{ tally[c.next]=(tally[c.next]||0)+1; }));
+  const items = Object.entries(tally).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  document.getElementById("unlock").innerHTML = items.length
+    ? `<b>What would unlock more trials:</b> ` + items.map(([k,n])=>`${esc(k)} (${n} trial${n>1?"s":""})`).join(" · ")
+    : `<b>What would unlock more trials:</b> nothing open right now`;
+}
+function renderSaved(shown){
+  const criteria = TRIALS.filter(t=>state.scored.has(t.nct)).reduce((a,t)=>a+score(t).total,0) + state.extraCriteria;
+  const trials = state.scored.size + state.extraChecked;
+  const mins = estimateMinutesSaved(trials, criteria, shown);
+  document.getElementById("saved-hrs").textContent = `~${(mins/60).toFixed(1)} hrs`;
+  document.getElementById("formula-text").textContent =
+`manual = SEARCH_SETUP + trials × MIN_PER_TRIAL + criteria × MIN_PER_CRITERION
+with tool = results shown × MIN_REVIEW_PER_RESULT
+saved = manual − with tool
+
+SEARCH_SETUP          = ${ASSUMPTION_MIN_SEARCH_SETUP} min  (placeholder)
+MIN_PER_TRIAL         = ${ASSUMPTION_MIN_PER_TRIAL_SCREEN} min  (placeholder)
+MIN_PER_CRITERION     = ${ASSUMPTION_MIN_PER_CRITERION} min  (placeholder)
+MIN_REVIEW_PER_RESULT = ${ASSUMPTION_MIN_REVIEW_PER_RESULT} min  (placeholder)`;
+  const manual = trials ? ASSUMPTION_MIN_SEARCH_SETUP + trials*ASSUMPTION_MIN_PER_TRIAL_SCREEN + criteria*ASSUMPTION_MIN_PER_CRITERION : 0;
+  document.getElementById("formula-live").innerHTML =
+    `This search: <b>${trials}</b> trials, <b>${criteria}</b> criteria checked → manual ≈ ${manual} min, with tool ≈ ${shown*ASSUMPTION_MIN_REVIEW_PER_RESULT} min, saved ≈ <b>${mins} min</b>.`;
+}
+
+/* ===================== TOAST / MODALS (copy & download only; nothing is sent) ===================== */
+let toastTimer;
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2600); }
+let lastFocus = null, modalText = "", modalFile = "";
+function modal(html, text, filename){
+  lastFocus = document.activeElement; modalText = text || ""; modalFile = filename || "";
+  const tools = text ? `<span class="muted">Copy or download only. Nothing is sent from TrialRadar.</span><button class="btn t" id="m-copy">Copy</button><button class="btn t" id="m-dl">Download .txt</button>` : "";
+  document.getElementById("modal").innerHTML = html + `<div class="mbtns">${tools}<button class="btn pri t" id="m-close">Close</button></div>`;
+  document.getElementById("modal-bg").classList.add("show");
+  document.getElementById("m-close").focus();
+}
+function closeModal(){
+  const bg=document.getElementById("modal-bg"); if(!bg.classList.contains("show")) return false;
+  bg.classList.remove("show"); lastFocus && lastFocus.focus && lastFocus.focus(); return true;
+}
+async function copyText(){
+  try { await navigator.clipboard.writeText(modalText); toast("Copied to clipboard"); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=modalText; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy"); toast("Copied to clipboard");}catch(_){toast("Copy not available here");} ta.remove(); }
+}
+function downloadText(){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([modalText],{type:"text/plain"})); a.download=modalFile; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000); toast(`Downloaded ${modalFile}`);
+}
+function action(act, nct, cmpRank){
+  const t = TRIALS.find(x=>x.nct===nct), sc = score(t), p = state.patient;
+  if (act==="referral"){
+    const txt = `Re: possible enrollment in ${t.nct} (${t.sponsor})
+
+Patient: ${p.age}${p.sex}, ${p.dx} stage ${p.stage}, ${p.bio.join(", ")}. ECOG ${p.ecog}. Prior: ${p.prior}.
+Meets ${sc.met} of ${sc.total} screened criteria.${sc.flags.length? "\nTo review: " + sc.flags.join("; ") + ".":""}
+Still to confirm: ${sc.crit.filter(c=>c.s==="unk").map(c=>c.t).join("; ")}.
+
+Nearest site: ${t.city} (${t.mi} mi).`;
+    modal(`<h3 id="modal-h">Draft referral note · ${esc(t.phase)} · ${esc(t.drug)}</h3><div class="wf-note">Wireframe placeholder text; clinician edits before use.</div><pre>${esc(txt)}</pre>`, txt, `referral-${t.nct}.txt`);
+  } else if (act==="summary"){
+    const txt = `There is a research study near ${t.city} testing ${t.drug.replace("Osi","osimertinib")} for lung cancer like yours.
+Your clinician thinks it may be worth a look. Some details still need to be checked before we know if you can join.
+Taking part is always your choice.`;
+    modal(`<h3 id="modal-h">Patient-friendly summary</h3><div class="wf-note">Wireframe placeholder text, plain language.</div><pre>${esc(txt)}</pre>`, txt, `patient-summary-${t.nct}.txt`);
+  } else if (act==="compare"){
+    const rows = scoredRows(); const other = rows[(+cmpRank||2)-1];
+    const all = [{t,sc}, ...(other && other.t.nct!==nct ? [other] : [])];
+    const line = (label, f) => `<tr><th>${label}</th>${all.map(x=>`<td>${f(x)}</td>`).join("")}</tr>`;
+    modal(`<h3 id="modal-h">Compare with #${cmpRank}</h3><table class="cmp">
+      ${line("Trial", x=>`<b>${esc(x.t.phase)} · ${esc(x.t.drug)}</b>`)}
+      ${line("Eligibility", x=>`${x.sc.pct}% match (${x.sc.met}/${x.sc.total})`)}
+      ${line("Next step", x=>esc(nextStep(x.t,x.sc).text))}
+      ${line("Nearest site", x=>`${x.t.mi} mi · ${esc(x.t.city)}`)}
+      ${line("Study evidence", x=>esc((EVIDENCE_TIER[x.t.phase]||{}).lvl||"—") + " · " + RESULTS_PLACEHOLDER)}
+      ${line("Notable issue", x=>x.sc.flags.length? esc(x.sc.flags.join("; ")) : "None")}
+      ${line("Sponsor", x=>esc(x.t.sponsor))}
+    </table>`);
+  }
+}
+
+/* ===================== THEME / RAIL ===================== */
+function syncThemeBtn(t){
+  const b=document.getElementById("theme-btn"); b.setAttribute("aria-pressed", t==="dark");
+  b.setAttribute("aria-label", t==="dark" ? "Switch to light mode" : "Switch to dark mode");
+  document.getElementById("theme-ico").textContent = t==="dark" ? "☀" : "☾";
+}
+function applyTheme(t){ document.documentElement.dataset.theme = t; syncThemeBtn(t); try{ localStorage.setItem("trialradar-theme", t); }catch(e){} render(); }
+function setRail(open){
+  const r=document.getElementById("rail"), b=document.getElementById("rail-toggle");
+  r.classList.toggle("open",open); r.inert = !open; b.setAttribute("aria-expanded",open);
+  if (!open && r.contains(document.activeElement)) b.focus();
+}
+const railOpen = () => document.getElementById("rail").classList.contains("open");
+
+/* ===================== EVENTS ===================== */
+document.addEventListener("click", e=>{
+  const tg = e.target.closest("[data-toggle]");
+  if (tg){ const n=tg.dataset.toggle; state.open = state.open===n?null:n; render(); return; }
+  const q = e.target.closest("[data-q]");
+  if (q){ state.answers[q.dataset.q]=q.dataset.v; render(); return; }
+  const a = e.target.closest("[data-act]");
+  if (a){ action(a.dataset.act, a.dataset.nct, a.dataset.cmp); return; }
+  const d = e.target.closest("[data-d]");
+  if (d){ state.dist=+d.dataset.d; document.querySelectorAll("#dist-seg button").forEach(b=>b.classList.toggle("on",b===d)); render(); return; }
+  const sb = e.target.closest("[data-src]");
+  if (sb){ document.querySelectorAll("#src-seg button").forEach(b=>b.classList.toggle("on",b===sb)); document.getElementById("photo-box").hidden = sb.dataset.src!=="photo"; return; }
+  const pv = e.target.closest("[data-preview]");
+  if (pv){ toast(`${pv.dataset.preview} is a UI preview; not available yet.`); return; }
+  const bx = e.target.closest("[data-bio-x]");
+  if (bx){ state.bio.splice(+bx.dataset.bioX,1); render(); document.getElementById("bio-add").focus(); return; }
+  const bc = e.target.closest("[data-bio]");
+  if (bc){ state.editingBio = +bc.dataset.bio; renderBioEditor(); return; }
+  if (e.target.id==="m-copy"){ copyText(); return; }
+  if (e.target.id==="m-dl"){ downloadText(); return; }
+  if (e.target.closest("#m-close") || e.target.id==="modal-bg"){ closeModal(); return; }
+  if (e.target.id==="scrim"){ setRail(false); return; }
+  const info = e.target.closest("#saved-info"); if (info && !e.target.closest(".pop")){ info.classList.toggle("open"); return; }
+  if (!e.target.closest(".pop")) document.getElementById("saved-info").classList.remove("open");
+});
+document.getElementById("bio-ed").addEventListener("keydown", e=>{
+  if (e.target.id==="bio-add" && e.key==="Enter"){ const v=e.target.value.trim(); if(v){ state.bio.push(v); e.target.value=""; e.target.blur(); render(); document.getElementById("bio-add").focus(); } }
+  if (e.target.dataset.bioEdit!==undefined){ if(e.key==="Enter") commitBioEdit(e.target); if(e.key==="Escape"){ state.editingBio=-1; e.target.blur(); render(); } }
+});
+document.getElementById("bio-ed").addEventListener("focusout", e=>{ if (e.target.dataset && e.target.dataset.bioEdit!==undefined && state.editingBio>=0) commitBioEdit(e.target); });
+document.getElementById("photo-file").addEventListener("change", ()=>toast("Wireframe: the report would be read on this device and fill the fields for review."));
+document.getElementById("rail-toggle").addEventListener("click", ()=>setRail(!railOpen()));
+document.getElementById("theme-btn").addEventListener("click", ()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
+document.querySelectorAll(".ph").forEach(cb=>cb.addEventListener("change",()=>{ state.phases = new Set([...document.querySelectorAll(".ph:checked")].map(x=>+x.value)); render(); }));
+["recruiting","whatif"].forEach(id=>document.getElementById(id).addEventListener("click",e=>{
+  const b=e.currentTarget, on=!b.classList.contains("on"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);
+  if(id==="recruiting") state.recruitingOnly=on; else state.whatIf=on; render();
+}));
+document.querySelectorAll(".rail .fld > input, .rail .fld > select").forEach(i=>i.addEventListener("input",render));
+document.getElementById("check-next").addEventListener("click",()=>{
+  let i=0; const tick=()=>{ if(i>=UNCHECKED.length) return; state.extraChecked++; state.extraCriteria+=UNCHECKED[i].criteria; i++; render(); setTimeout(tick, reduceMotion?0:300); };
+  tick();
+});
+document.addEventListener("keydown", e=>{ if (e.key === "Escape"){ if (!closeModal()){ document.getElementById("saved-info").classList.remove("open"); if (railOpen() && innerWidth<=900) setRail(false); } } });
+
+/* ===================== STAGED ARRIVAL (driven by the bot) =====================
+   The AI bot first LISTS trials (rows show "Not checked yet"), then SCORES them one at a time.
+   Hook for the real integration: window.TrialRadar.listTrials([nct...]) and .scoreTrial(nct).
+   The demo below simulates that sequence.                                                     */
+window.TrialRadar = {
+  listTrials(ncts){ ncts.forEach(n=>state.listed.add(n)); render(); },
+  scoreTrial(nct){ state.listed.add(nct); state.scored.add(nct); render(); },
+  reset(){ state.listed.clear(); state.scored.clear(); state.extraChecked=0; state.extraCriteria=0; render(); }
+};
+(function init(){
+  syncThemeBtn(document.documentElement.dataset.theme || "light");
+  render();
+  const params = new URLSearchParams(location.search);
+  const step = +(params.get("stepMs") || 650);
+  setTimeout(()=>{
+    TrialRadar.listTrials(TRIALS.map(t=>t.nct));
+    let i=0; const next=()=>{ if(i<TRIALS.length){ TrialRadar.scoreTrial(TRIALS[i++].nct); setTimeout(next, step); } }; setTimeout(next, step);
+  }, 300);
+})();
+</script>
+</body>
+</html>
