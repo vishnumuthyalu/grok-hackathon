@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 export TRIALRADAR_DATA="${TRIALRADAR_DATA:-$ROOT/data}"
+export PYTHONUTF8=1
 export DEMO_CACHE="${DEMO_CACHE:-1}"
 export LLM_PROVIDER="${LLM_PROVIDER:-ollama}"
 export LLM_FALLBACK="${LLM_FALLBACK:-stub}"

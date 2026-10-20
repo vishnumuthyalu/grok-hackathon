@@ -144,8 +144,8 @@ def _pdf(path: Path, title: str, lines: list[str]) -> None:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for key, report in REPORTS.items():
-        (OUT / f"{key}.html").write_text(_html(report["title"], report["lines"]))
-        (OUT / f"{key}.txt").write_text("SYNTHETIC – FOR DEMO\n" + "\n".join(report["lines"]) + "\n")
+        (OUT / f"{key}.html").write_text(_html(report["title"], report["lines"]), encoding="utf-8")
+        (OUT / f"{key}.txt").write_text("SYNTHETIC – FOR DEMO\n" + "\n".join(report["lines"]) + "\n", encoding="utf-8")
         _pdf(OUT / f"{key}.pdf", report["title"], report["lines"])
         print(key)
 
