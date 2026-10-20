@@ -133,6 +133,7 @@ class Session(BaseModel):
     warning: str | None = None
     error: str | None = None
     retrieved_at: str | None = None
+    source_recorded_at: str | None = None
     source_label: str = "ClinicalTrials.gov"
     total_available: int | None = None
     referral_note: str | None = None

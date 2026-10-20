@@ -6,6 +6,7 @@ Both are built only from structured facts already on screen. Nothing is sent.
 from __future__ import annotations
 
 from trialradar import DISCLAIMER
+from trialradar.citations import sources_block
 
 
 def _phase(phases: list[str]) -> str:
@@ -57,6 +58,8 @@ def draft_referral(patient: dict, trial: dict, rules: list[dict]) -> str:
         lines.append("Still unknown — for the treating doctor:")
         for rule in open_rules:
             lines.append(f"- {rule['text'][:220]}")
+    lines.append("")
+    lines.extend(sources_block(trial))
     lines.extend(["", DISCLAIMER])
     return "\n".join(lines)
 
@@ -93,7 +96,7 @@ def draft_summary(patient: dict, trial: dict, rules: list[dict]) -> str:
         )
     bits.append("Only your doctor can decide if a study is a good fit. This app does not contact you or the study site.")
     bits.append(DISCLAIMER)
-    return " ".join(bits)
+    return " ".join(bits) + "\n\n" + "\n".join(sources_block(trial))
 
 
 def _miles(value) -> str:
