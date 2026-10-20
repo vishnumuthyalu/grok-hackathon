@@ -162,8 +162,7 @@ function apply(data, external) {
 function render(data) {
   const banner = $("banner");
   if (data.warning || data.error) {
-    banner.hidden = false;
-    banner.textContent = data.error || data.warning;
+    setBanner(data.error || data.warning);
   } else {
     banner.hidden = true;
   }
@@ -518,7 +517,17 @@ function timeAgo(iso) {
   if (mins < 120) return `${mins} min ago`;
   return `${Math.round(mins / 60)} h ago`;
 }
-function showBanner(text) { $("banner").hidden = false; $("banner").textContent = text; }
+function showBanner(text) { setBanner(text); }
+var bannerDismissed = null;
+function setBanner(text) {
+  const b = $("banner");
+  if (bannerDismissed === text) { b.hidden = true; return; }
+  b.hidden = false; b.setAttribute("role", "status"); b.textContent = "";
+  const m = document.createElement("span"); m.className = "bmsg"; m.textContent = text;
+  const x = document.createElement("button"); x.type = "button"; x.className = "bx"; x.textContent = "×";
+  x.setAttribute("aria-label", "Dismiss"); x.onclick = () => { bannerDismissed = text; b.hidden = true; };
+  b.append(m, x);
+}
 let toastTimer = null;
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
