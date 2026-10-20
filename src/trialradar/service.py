@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from trialradar import DISCLAIMER
-from trialradar.cache import checks_from_entry, match_patient, signature, trials_from_entry
+from trialradar.cache import checks_from_entry, load_cache, match_patient, signature, trials_from_entry
+from trialradar.citations import SCORE_EXPLANATION, cite_quote, provenance, verification
 from trialradar.ctgov import (
     CtGovError,
     build_query,
@@ -143,9 +144,22 @@ def _site_markers(trial: Trial, filters: Filters) -> list[dict[str, Any]]:
     return markers[:6]
 
 
-def _trial_public(trial: Trial, filters: Filters) -> dict[str, Any]:
+def _trial_public(trial: Trial, filters: Filters, session: Session | None = None) -> dict[str, Any]:
     site = _nearest(trial, filters.recruiting_only)
+    prov = provenance(
+        trial,
+        demo_cache=bool(session and session.demo_cache),
+        retrieved_at=session.retrieved_at if session else None,
+        recorded_at=session.source_recorded_at if session else None,
+    )
     return {
+        "provenance": prov,
+        "verification": verification(trial, []),
+        "site_citation": None if site is None else {
+            "section": "Locations",
+            "nct_id": trial.nct_id,
+            "url": prov["study_url"] + "#contacts-and-locations",
+        },
         "nct_id": trial.nct_id,
         "brief_title": trial.brief_title,
         "overall_status": trial.overall_status,
@@ -165,9 +179,10 @@ def _trial_public(trial: Trial, filters: Filters) -> dict[str, Any]:
     }
 
 
-def _rule_public(rule) -> dict[str, Any]:
+def _rule_public(rule, trial: Trial | None = None) -> dict[str, Any]:
     hypothetical = rule.resolver == "scan_within_days_hypothetical"
     return {
+        "citation": cite_quote(rule.text, trial) if trial is not None else None,
         "id": rule.id,
         "text": rule.text,
         "kind": rule.kind,
@@ -244,6 +259,7 @@ def search(*, patient: Patient | None = None, force_live: bool = False) -> dict[
             session.total_available = entry.get("total_available")
             session.demo_cache = True
             session.source_label = "Recorded ClinicalTrials.gov results (demo cache)"
+            session.source_recorded_at = (load_cache() or {}).get("recorded_at")
             session.llm_mode = entry.get("provider") or "recorded"
             used_cache = True
         else:
@@ -291,6 +307,7 @@ def search(*, patient: Patient | None = None, force_live: bool = False) -> dict[
         session.total_available = total
         session.demo_cache = False
         session.source_label = "ClinicalTrials.gov"
+        session.source_recorded_at = None
         session.selected_nct = None
     session.fetched_radius_mi = radius
     session.retrieved_at = _now()
@@ -450,6 +467,9 @@ def draft(nct_id: str | None = None) -> dict[str, Any]:
         "summary": draft_summary(patient, row, row["rules"]),
         "disclaimer": DISCLAIMER,
         "delivery": "copy_or_download_only",
+        "sources": [row["provenance"]["study_url"], row["provenance"]["api_url"]],
+        "provenance": row["provenance"],
+        "verification": {key: row["verification"][key] for key in ("score", "label", "summary")},
     }
     session.referral_note = notes["referral"]
     session.summary_note = notes["summary"]
@@ -514,7 +534,7 @@ def view(session: Session | None = None) -> dict[str, Any]:
     for trial in session.trials:
         if not _visible(trial, filters):
             continue
-        public = _trial_public(trial, filters)
+        public = _trial_public(trial, filters, session)
         check = session.checks.get(trial.nct_id)
         if check is None:
             unchecked.append(public)
@@ -526,7 +546,8 @@ def view(session: Session | None = None) -> dict[str, Any]:
             for rule in check.rules
             if rule.status == "not_met"
         ]
-        rules_out = [_rule_public(rule) for rule in effective]
+        rules_out = [_rule_public(rule, trial) for rule in effective]
+        public["verification"] = verification(trial, [rule["citation"] for rule in rules_out])
         failed_rules = [rule for rule in rules_out if rule["status"] == "not_met"]
         blocking = None
         if failed_rules:
@@ -600,6 +621,8 @@ def view(session: Session | None = None) -> dict[str, Any]:
         "warning": session.warning,
         "error": session.error,
         "retrieved_at": session.retrieved_at,
+        "source_recorded_at": session.source_recorded_at,
+        "verification_explanation": SCORE_EXPLANATION,
         "source_label": session.source_label,
         "total_available": session.total_available,
         "fetched_radius_mi": session.fetched_radius_mi,

@@ -220,7 +220,7 @@ function renderTrials(data) {
       <div>
         <div class="tt">${esc(row.brief_title)} ${tag}</div>
         <div class="mt"><code>${esc(row.nct_id)}</code><span>${esc(row.phase_label)}</span><span>${esc(row.nearest_label || "Site")} · ${miles(row.nearest_distance_mi)}</span></div>
-        <div class="pills"><span class="p pg">${row.met} met</span><span class="p ${row.failed ? "pr" : "pn"}">${row.failed} failed</span><span class="p pa">${row.unknown} unknown</span></div>
+        <div class="pills"><span class="p pg">${row.met} met</span><span class="p ${row.failed ? "pr" : "pn"}">${row.failed} failed</span><span class="p pa">${row.unknown} unknown</span>${verifyBadge(row.verification, data)}</div>
         ${blocking}
       </div>
     </button>`;
@@ -251,6 +251,7 @@ function renderDetail(data) {
     <div class="kicker">#${trial.rank} · ${esc(trial.nct_id)} · ${esc(trial.phase_label)}</div>
     <div class="dt">${esc(trial.brief_title)}</div>
     <div style="margin-top:5px"><a class="link" href="${esc(trial.url)}" target="_blank" rel="noreferrer">View on ClinicalTrials.gov ↗</a></div>
+    ${provenanceBox(trial, data)}
     <div id="map" role="img" aria-label="Map of the patient and the nearest trial site"></div>
     <div class="rules">${ruleHtml || `<div class="empty">No rules were returned for this study.</div>`}</div>
     ${what}
@@ -285,15 +286,46 @@ function organize(rules) {
   };
 }
 
+function verifyBadge(ver, data) {
+  if (!ver) return "";
+  const cls = ver.score >= 90 ? "ok" : ver.score >= 60 ? "mid" : "low";
+  const tip = `${ver.summary}\n\n${(data && data.verification_explanation) || ver.explanation || ""}`;
+  return `<span class="vb ${cls}" title="${esc(tip)}">✓ ${esc(ver.label)} ${ver.score}/100</span>`;
+}
+
+function provenanceBox(trial, data) {
+  const prov = trial.provenance;
+  if (!prov) return "";
+  const ver = trial.verification || {};
+  return `<div class="prov">
+    <div class="prov-h"><b>Source</b> ${verifyBadge(ver, data)}</div>
+    <div>ClinicalTrials.gov record <code>${esc(prov.nct_id)}</code> ·
+      <a class="link" href="${esc(prov.study_url)}" target="_blank" rel="noreferrer">study page ↗</a> ·
+      <a class="link" href="${esc(prov.api_url)}" target="_blank" rel="noreferrer">API v2 record (JSON) ↗</a></div>
+    <div class="s">Last updated on ClinicalTrials.gov: ${esc(prov.last_update || "not listed")} · ${esc(prov.retrieval_label || "")}</div>
+    <div class="s">${esc(ver.summary || "")}. Score is computed by code from the record, not by AI. It checks the sources, not the trial's clinical quality.</div>
+  </div>`;
+}
+
+function citeLine(rule) {
+  const cite = rule.citation;
+  if (!cite) return "";
+  const where = cite.section ? `${esc(cite.section)} · ${esc(cite.nct_id)}` : `${esc(cite.nct_id)}`;
+  const mark = cite.verified
+    ? `<span class="cq ok" title="This rule text was found word-for-word (ignoring line breaks) in the stored ClinicalTrials.gov record.">✓ Verified quote</span>`
+    : `<span class="cq bad" title="This text was not found word-for-word in the stored ClinicalTrials.gov record. Check the study page.">⚠ Not found in source</span>`;
+  return `<div class="cite">${mark} <a class="link" href="${esc(cite.url)}" target="_blank" rel="noreferrer">[ClinicalTrials.gov · ${where}] ↗</a></div>`;
+}
+
 function ruleCard(rule) {
   const pill = rule.status === "met" ? "pg" : rule.status === "not_met" ? "pr" : "pa";
   const word = rule.status === "met" ? "Met" : rule.status === "not_met" ? "Not met" : "Unknown";
   const evidence = rule.evidence && rule.evidence !== "no evidence"
-    ? `<div class="ev">Evidence: <mark>${esc(rule.evidence)}</mark>${rule.hypothetical ? " — hypothetical" : ""}</div>`
+    ? `<div class="ev">Patient record evidence: <mark>${esc(rule.evidence)}</mark>${rule.hypothetical ? " — hypothetical" : ""}</div>`
     : "";
   return `<div class="rule"><span class="p ${pill}">${word}</span><div>
     ${rule.hypothetical ? `<div class="hypo">HYPOTHETICAL</div>` : ""}
-    <b>${esc(rule.text)}</b><span>${esc(rule.reason)}</span>${evidence}
+    <b>${esc(rule.text)}</b>${citeLine(rule)}<span>${esc(rule.reason)}</span>${evidence}
   </div></div>`;
 }
 

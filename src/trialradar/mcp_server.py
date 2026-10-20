@@ -30,6 +30,11 @@ mcp = FastMCP(
         "rule as met, not met, or unknown. Work in this order: extract_patient, "
         "find_trials, check_eligibility, rescore if the doctor answers or edits a fact, "
         "then draft_notes. Never invent a trial, a biomarker, or a lab. "
+        "Cite sources: whenever you tell the doctor anything about a trial, include its "
+        "citation.study_url (https://clinicaltrials.gov/study/<NCT id>) and its "
+        "verification score/label. When quoting an eligibility rule, say which "
+        "source_section it came from and whether quote_verified is true; if it is false, "
+        "say the quote was not found in the ClinicalTrials.gov record. "
         "Do not contact patients or trial sites. Every result is a suggestion for the "
         "treating doctor to confirm. Copy or download the drafts only."
     ),
@@ -86,6 +91,11 @@ def find_trials(
     With DEMO_CACHE=1, the three prepared patients return recorded
     ClinicalTrials.gov studies so the demo works offline. Other patients are
     looked up live. Trial ids, titles, and criteria are never invented.
+
+    Every trial includes citation (study_url, api_url, last_update on
+    ClinicalTrials.gov, retrieved_at, retrieval_label) and verification
+    (a deterministic 0-100 source-verification score, not a clinical-quality
+    score). Cite citation.study_url whenever you mention a trial.
     """
     session = load()
     session.filters.distance_mi = distance_mi
@@ -121,6 +131,11 @@ def check_eligibility(
 
     Near miss means exactly one failed rule. The blocking text says what
     would change it. Read ranked[].rules before telling the doctor anything.
+
+    Citations: each ranked trial has citation and verification. Each rule has
+    source_section (e.g. "Eligibility Criteria"), source_url, and
+    quote_verified (true when the rule text was found word-for-word in the
+    stored ClinicalTrials.gov record). Cite these when you quote a rule.
     """
     payload = run_check(nct_ids=nct_ids, top_n=top_n, next_batch=next_batch)
     payload["next_step"] = (
@@ -179,7 +194,10 @@ def draft_notes(nct_id: str | None = None) -> dict:
     - delivery: copy_or_download_only
 
     Pass nct_id or omit it to use the trial selected in the window.
-    Both drafts include the disclaimer. Do not email, fax, or submit them.
+    Both drafts include the disclaimer and end with a Sources section listing
+    the ClinicalTrials.gov study and API links. Keep that section when you show
+    them. sources and verification are also returned as fields.
+    Do not email, fax, or submit them.
     """
     payload = run_draft(nct_id=nct_id)
     notes = payload.get("notes") or {}
@@ -187,11 +205,30 @@ def draft_notes(nct_id: str | None = None) -> dict:
         "nct_id": notes.get("nct_id"),
         "referral": notes.get("referral"),
         "summary": notes.get("summary"),
+        "sources": notes.get("sources"),
+        "verification": notes.get("verification"),
         "delivery": "copy_or_download_only",
         "disclaimer": DISCLAIMER,
         "error": payload.get("error"),
         "next_step": "Show both drafts to the doctor. Stop. Do not contact the patient or the site.",
     }
+
+
+def _citation(row: dict) -> dict:
+    prov = row.get("provenance") or {}
+    return {
+        "source": prov.get("source", "ClinicalTrials.gov"),
+        "study_url": prov.get("study_url") or row.get("url"),
+        "api_url": prov.get("api_url"),
+        "last_update": prov.get("last_update"),
+        "retrieved_at": prov.get("retrieved_at"),
+        "retrieval_label": prov.get("retrieval_label"),
+    }
+
+
+def _verification(row: dict) -> dict:
+    ver = row.get("verification") or {}
+    return {key: ver.get(key) for key in ("score", "label", "summary", "quotes_verified", "quotes_total", "method")}
 
 
 def _compact_patient(payload: dict) -> dict:
@@ -216,6 +253,8 @@ def _compact_trials(payload: dict) -> dict:
             "distance_mi": row.get("nearest_distance_mi"),
             "where": row.get("nearest_label"),
             "url": row.get("url"),
+            "citation": _citation(row),
+            "verification": _verification(row),
             "checked": "met" in row,
         })
     return {
@@ -242,6 +281,8 @@ def _compact_checks(payload: dict) -> dict:
             "distance_mi": row.get("nearest_distance_mi"),
             "where": row.get("nearest_label"),
             "url": row.get("url"),
+            "citation": _citation(row),
+            "verification": _verification(row),
             "met": row.get("met"),
             "failed": row.get("failed"),
             "unknown": row.get("unknown"),
@@ -255,6 +296,9 @@ def _compact_checks(payload: dict) -> dict:
                     "reason": rule.get("reason"),
                     "evidence": rule.get("evidence"),
                     "hypothetical": rule.get("hypothetical"),
+                    "source_section": (rule.get("citation") or {}).get("section"),
+                    "source_url": (rule.get("citation") or {}).get("url"),
+                    "quote_verified": bool((rule.get("citation") or {}).get("verified")),
                 }
                 for rule in row.get("rules") or []
                 if not (rule.get("boilerplate") and rule.get("status") == "unknown")

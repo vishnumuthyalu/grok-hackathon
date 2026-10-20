@@ -220,3 +220,16 @@ a.link { color: var(--teal-d); font-weight: 600; font-size: 13px; }
 .empty { color: var(--mute); padding: 12px 0; }
 select.examples { margin-left: auto; font-size: 13px; border: 1px solid #d3dbe2; border-radius: 7px; padding: 4px 8px; }
 .leaflet-container { font: inherit; }
+
+/* Citations and source verification */
+.vb { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; margin-left: 4px; cursor: help; border: 1px solid; }
+.vb.ok { background: #e7f6ee; color: #11683f; border-color: #9fd8b9; }
+.vb.mid { background: #fff5e0; color: #8a5a00; border-color: #f0cf8a; }
+.vb.low { background: #fdeaea; color: #9b1c1c; border-color: #f2b1b1; }
+.prov { margin-top: 8px; padding: 8px 10px; border: 1px solid #d8e3ea; background: #f6fafc; border-radius: 6px; font-size: 12.5px; line-height: 1.5; }
+.prov .prov-h { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.prov .s { color: var(--mute); font-size: 12px; }
+.cite { font-size: 11.5px; margin: 2px 0 3px; }
+.cq { font-weight: 600; cursor: help; }
+.cq.ok { color: #11683f; }
+.cq.bad { color: #9b1c1c; }
