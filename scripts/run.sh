@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+# Absolute path so the web app and the MCP process share one session file
+# even when they are started from different working directories.
+export TRIALRADAR_DATA="${TRIALRADAR_DATA:-$ROOT/data}"
 if [[ -f .venv/bin/activate ]]; then
   # shellcheck disable=SC1091
   source .venv/bin/activate

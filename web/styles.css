@@ -171,6 +171,15 @@ a.link { color: var(--teal-d); font-weight: 600; font-size: 13px; }
   margin-top: 10px; border: 1px dashed #d9a441; background: #fffaf0; border-radius: 10px;
   padding: 10px 12px; display: flex; align-items: center; gap: 12px;
 }
+.row.pending { opacity: 0.72; }
+.draft-preview {
+  margin-top: 12px; border: 1px solid #c5e5e3; border-radius: 10px; padding: 10px 12px; background: #f4fbfb;
+}
+.draft-preview h3 { margin: 0 0 6px; font-size: 14px; color: var(--teal-d); }
+.draft-preview pre {
+  white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.45; margin: 0;
+  max-height: 180px; overflow: auto;
+}
 .wi .t { font-weight: 600; font-size: 14px; }
 .wi .s { font-size: 12.5px; color: var(--a); }
 .btns { display: flex; gap: 8px; margin-top: 12px; }

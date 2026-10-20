@@ -60,7 +60,7 @@ LLM_PROVIDER=stub python scripts/record_cache.py
 | `OLLAMA_VISION_MODEL` | `qwen2.5vl:7b` | Optional. Used only for a photo when this model is installed. |
 | `CHECK_TOP_N` | `5` | How many trials to score per pass. |
 | `FETCH_RADIUS_MI` | `250` | Retrieved once so the distance slider can move without a new search. |
-| `TRIALRADAR_DATA` | `data/` | Shared session file. The UI and the MCP process both use it. |
+| `TRIALRADAR_DATA` | absolute `data/` from `run.sh` and `demo.sh` | Shared session file. The UI and the MCP process both use this path. |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | Web UI. |
 | `MCP_HOST` / `MCP_PORT` | `127.0.0.1` / `8001` | Streamable HTTP MCP. |
 | `NOMINATIM_USER_AGENT` | a local-demo string | Only used after the hardcoded city list misses. At most 1 request/second, cached. |
@@ -77,13 +77,13 @@ Each description says what to pass, what comes back, and what to call next. Ever
 
 **Cursor.** Use `demo/cursor/mcp.json` as `.cursor/mcp.json` (or merge it into your user MCP config). Start it from the repo root so `python -m trialradar.mcp_server` imports this project.
 
-A scripted client that drives the same tools:
+Side-by-side with the browser (the bot waits for Enter before each tool):
 
 ```bash
-DEMO_CACHE=1 LLM_PROVIDER=stub python scripts/mcp_client_demo.py
+./scripts/demo.sh
 ```
 
-Start `./scripts/run.sh` first if you want the browser to follow along. The UI listens on `/api/events` and refreshes when the session file changes.
+`./scripts/demo.sh --delay 2` pauses two seconds instead of waiting for Enter. `--fast` runs every tool back to back. Both `run.sh` and the demo script set `TRIALRADAR_DATA` to this repo's `data/` directory as an absolute path, so the web app and the MCP process share one session file. The page follows it on `/api/events`.
 
 Try this as the bot's task:
 
@@ -91,17 +91,29 @@ Try this as the bot's task:
 
 ## Three-minute demo
 
-Bot chat on the left, TrialRadar on the right ([http://127.0.0.1:8000](http://127.0.0.1:8000)). `DEMO_CACHE=1` so this works offline after setup.
+Browser on the right, the stepped bot in a terminal on the left. `DEMO_CACHE=1` so this works offline after setup.
 
-1. The bot runs `extract_patient` on `demo/reports/nsclc_egfr_austin.txt` (or the judge picks **NSCLC EGFR L858R · Austin**). The form fills in: 62 F, stage IIIB, EGFR L858R, osimertinib progressed, Austin, last scan 47 days ago.
-2. The bot runs `find_trials` then `check_eligibility`. The middle column ranks real NCT numbers. Rank 1 is the best fit (no failed rule). A near miss is exactly one failed rule, with the blocking line and what would change it. The first-line osimertinib study fails because this patient already received an EGFR TKI.
-3. The judge clicks a trial and reads the evidence quotes. Unknown rules are questions on the left (brain MRI, measurable disease).
-4. Answer **Brain metastases on recent MRI?** The list re-ranks with no new search and no model call.
-5. Flip **What if: new scan within 14 days**. The label is hypothetical. The number comes from the real criterion (this cache uses 14 days, not a made-up 28).
-6. Change the biomarker chip from `EGFR L858R` to `EGFR none` and press Enter. Trials that require an EGFR mutation drop. Still no new search.
-7. Drag the distance slider. Phase checkboxes and **Recruiting only** filter the list that was already retrieved.
-8. **Compare with #2** shows both trials rule by rule. **Draft referral note** and **Patient-friendly summary** open editable text. Copy or download. There is no send button.
-9. The footer stays on screen: suggestions for the treating doctor; TrialRadar never contacts patients or sites.
+```bash
+./scripts/demo.sh
+```
+
+That starts the server if it is not already up, opens [http://127.0.0.1:8000](http://127.0.0.1:8000), clears the previous session so the page starts empty, and runs `scripts/mcp_client_demo.py` in step mode. Press Enter before each tool. The page updates after that tool writes the shared session.
+
+1. **extract_patient** reads the Austin NSCLC note. The form fills in: 62 F, stage IIIB, EGFR L858R, osimertinib progressed, Austin, last scan 47 days ago. The trial list is still empty.
+2. **find_trials** lists recruiting studies within 100 miles, marked “Not checked”.
+3. **check_eligibility** scores the top 5. Rank 1 is the best fit (no failed rule). A near miss is exactly one failed rule, with the blocking line and what would change it. The first-line osimertinib study fails because this patient already received an EGFR TKI.
+4. **rescore** answers **Brain metastases on recent MRI?** with No. The question flips on the left. No new search and no model call.
+5. **draft_notes** puts the plain-language summary on the trial panel. Copy or download only. Nothing is sent.
+
+Then the judge takes over the same page:
+
+1. Click a trial and read the evidence quotes. Unknown rules are questions on the left (brain MRI, measurable disease).
+2. The brain-MRI question may already say No. Change it, or leave it. The list re-ranks with no new search and no model call.
+3. Flip **What if: new scan within 14 days**. The label is hypothetical. The number comes from the real criterion (this cache uses 14 days, not a made-up 28).
+4. Change the biomarker chip from `EGFR L858R` to `EGFR none` and press Enter. Trials that require an EGFR mutation drop. Still no new search.
+5. Drag the distance slider. Phase checkboxes and **Recruiting only** filter the list that was already retrieved.
+6. **Compare with #2** shows both trials rule by rule. **Draft referral note** and **Patient-friendly summary** open editable text. Copy or download. There is no send button.
+7. The footer stays on screen: suggestions for the treating doctor; TrialRadar never contacts patients or sites.
 
 **Refresh live** in the filter bar ignores the demo cache and calls ClinicalTrials.gov.
 

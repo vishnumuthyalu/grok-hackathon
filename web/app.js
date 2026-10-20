@@ -126,7 +126,14 @@ async function savePatient(searchAfter) {
 }
 
 function apply(data, external) {
-  if (!data || data.revision < revision) return;
+  if (!data) return;
+  // A cleared session used to restart the counter at 1, and the open page
+  // dropped every later event. A newer timestamp still counts.
+  if (data.revision < revision) {
+    const next = data.updated_at || "";
+    const previous = (state && state.updated_at) || "";
+    if (!next || next <= previous) return;
+  }
   revision = data.revision;
   state = data;
   if (external) fillForm(data.patient);
@@ -192,6 +199,15 @@ function renderTrials(data) {
     return;
   }
   const selected = data.selected && data.selected.nct_id;
+  const pending = (data.unchecked || []).map((row) => `
+    <button type="button" class="row pending" data-nct="${esc(row.nct_id)}">
+      <div class="rk">·</div>
+      <div>
+        <div class="tt">${esc(row.brief_title)}</div>
+        <div class="mt"><code>${esc(row.nct_id)}</code><span>${esc(row.phase_label)}</span><span>${esc(row.nearest_label || "Site")} · ${miles(row.nearest_distance_mi)}</span></div>
+        <div class="pills"><span class="p pn">Not checked</span></div>
+      </div>
+    </button>`).join("");
   box.innerHTML = rows.map((row) => {
     const tag = row.tag === "best_fit" ? `<span class="tag top">Best fit</span>`
       : row.tag === "near_miss" ? `<span class="tag a">Near miss</span>`
@@ -208,7 +224,7 @@ function renderTrials(data) {
         ${blocking}
       </div>
     </button>`;
-  }).join("");
+  }).join("") + pending;
   const more = data.unchecked_count || 0;
   $("more-label").textContent = more
     ? `${more} more trial${more === 1 ? "" : "s"} found within ${data.filters.distance_mi} mi, not yet checked`
@@ -238,6 +254,7 @@ function renderDetail(data) {
     <div id="map" role="img" aria-label="Map of the patient and the nearest trial site"></div>
     <div class="rules">${ruleHtml || `<div class="empty">No rules were returned for this study.</div>`}</div>
     ${what}
+    ${data.summary_note ? `<div class="draft-preview"><h3>Draft from the assistant</h3><pre>${esc(data.summary_note)}</pre></div>` : ""}
     <div class="btns">
       <button type="button" class="btn" id="compare" ${other ? "" : "disabled"}>Compare with #${other ? other.rank : ""}</button>
       <button type="button" class="btn" id="referral">Draft referral note</button>
@@ -509,6 +526,8 @@ async function boot() {
   events.onmessage = (message) => {
     const data = JSON.parse(message.data);
     if (!data || data.revision === revision) return;
+    if (data.revision < revision && !((data.updated_at || "") > ((state && state.updated_at) || ""))) return;
+    const drafted = data.summary_note && !(state && state.summary_note);
     const typing = document.activeElement && document.activeElement.closest("#patient-form, #photo-box");
     if (typing && data.patient_source !== "mcp") {
       revision = data.revision;
@@ -518,6 +537,7 @@ async function boot() {
     }
     apply(data, true);
     if (data.patient_source === "mcp") toast("Updated from the AI assistant");
+    if (drafted) toast("Draft notes are on screen");
   };
 }
 

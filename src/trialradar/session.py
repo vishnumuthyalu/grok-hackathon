@@ -40,8 +40,20 @@ def save(session: Session) -> Session:
 
 
 def reset() -> Session:
+    """Replace the shared session with an empty one.
+
+    The revision keeps climbing. An open browser ignores a file whose
+    revision went backwards, so a cleared session must still look newer.
+    """
     path = session_path()
+    previous = 0
     with _lock:
         if path.exists():
+            try:
+                previous = Session.model_validate_json(path.read_text()).revision
+            except ValueError:
+                previous = 0
             path.unlink()
-    return save(Session())
+    fresh = Session()
+    fresh.revision = previous
+    return save(fresh)

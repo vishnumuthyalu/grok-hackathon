@@ -80,6 +80,53 @@ def test_check_is_one_call_and_edits_do_not_call_again(monkeypatch, tmp_path):
     assert provider.calls == 1
 
 
+def test_recorded_scores_appear_on_check_not_search(monkeypatch, tmp_path):
+    trial = parse_study(FIXTURE)
+    trial.sites[0].city = "Austin"
+    trial.sites[0].state = "Texas"
+    trial.sites[0].status = "RECRUITING"
+    trial.sites[0].lat = 30.2672
+    trial.sites[0].lon = -97.7431
+    scored = StubProvider().evaluate(NSCLC_AUSTIN, trial.eligibility_criteria)
+    scored.nct_id = trial.nct_id
+    path = tmp_path / "demo_cache.json"
+    monkeypatch.setenv("DEMO_CACHE_PATH", str(path))
+    monkeypatch.setenv("DEMO_CACHE", "1")
+    write_cache({
+        "nsclc-austin": {
+            "signature": signature(NSCLC_AUSTIN),
+            "provider": "recorded-stub",
+            "total_available": 1,
+            "patient": NSCLC_AUSTIN.model_dump(),
+            "trials": [trial.model_dump()],
+            "checks": {trial.nct_id: scored.model_dump()},
+        }
+    }, provider="recorded-stub")
+    provider = StubProvider()
+    set_provider(provider)
+    found = search(patient=NSCLC_AUSTIN.model_copy(deep=True))
+    assert found["checked_count"] == 0
+    assert found["unchecked"][0]["nct_id"] == "NCT04486833"
+    checked = check(top_n=5)
+    assert provider.calls == 0
+    assert checked["checked_count"] == 1
+    assert checked["newly_checked"] == ["NCT04486833"]
+    assert checked["ranked"][0]["met"] >= 1
+
+
+def test_reset_revision_keeps_climbing(tmp_path, monkeypatch):
+    monkeypatch.setenv("TRIALRADAR_DATA", str(tmp_path / "shared"))
+    from trialradar.models import Session
+    from trialradar.session import reset, save
+
+    session = Session()
+    session.revision = 7
+    save(session)
+    fresh = reset()
+    assert fresh.patient is None
+    assert fresh.revision == 9
+
+
 def test_example_load_resets_a_narrowed_distance(monkeypatch, tmp_path):
     _cache(monkeypatch, tmp_path)
     set_provider(StubProvider())
