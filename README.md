@@ -156,6 +156,8 @@ python -m pytest
 
 The tests use the local rules engine and a recorded ClinicalTrials.gov study fixture (`tests/fixtures/nct04486833.json`). They do not need Ollama. `tests/test_mcp.py` starts the MCP server over stdio and runs extract → find → check → rescore → draft.
 
+The MCP test launches its server with the test runner's Python interpreter by default. Set `PYTHON` to override that interpreter explicitly.
+
 ## Layout
 
 ```

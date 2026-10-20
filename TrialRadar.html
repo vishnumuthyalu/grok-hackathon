@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrialRadar</title>
+  <link rel="stylesheet" href="TrialRadar_files/leaflet_sS69.css">
+  <link rel="stylesheet" href="TrialRadar_files/styles_sS69.css">
+</head>
+<body data-new-gr-c-s-check-loaded="8.937.0" data-gr-ext-installed="">
+  <header class="top">
+    <div class="logo" aria-hidden="true"><i></i></div>
+    <div>
+      <div class="wm">Trial<span>Radar</span></div>
+      <div class="sub">Clinical trial matching for doctors and their AI assistants</div>
+    </div>
+    <div class="sp"></div>
+    <span class="lbl">Patient source</span>
+    <div class="seg" role="tablist">
+      <button type="button" id="src-typed" class="on">Typed</button>
+      <button type="button" id="src-photo">Photo of report (beta)</button>
+    </div>
+    <span class="badge">Runs locally • open source • no patient data leaves this laptop</span>
+  </header>
+  <div class="filters">
+    <div class="f">
+      <span class="k">Travel distance</span>
+      <input id="distance" type="range" min="25" max="250" step="5" value="100" aria-label="Travel distance in miles">
+      <span class="val" id="distance-val">100 mi</span>
+    </div>
+    <div class="f">
+      <span class="k">Phase</span>
+      <label class="cb"><input type="checkbox" id="ph1" checked="checked"> 1</label>
+      <label class="cb"><input type="checkbox" id="ph2" checked="checked"> 2</label>
+      <label class="cb"><input type="checkbox" id="ph3" checked="checked"> 3</label>
+    </div>
+    <div class="f">
+      <button type="button" class="tg on" id="recruiting" aria-pressed="true" aria-label="Recruiting only"></button>
+      <span>Recruiting only</span>
+    </div>
+    <div class="sp"></div>
+    <div class="source-line">
+      <span id="source-line">Recorded ClinicalTrials.gov results (demo cache) · last checked just now</span>
+      · <button type="button" class="linkish" id="refresh-live">Refresh live</button>
+    </div>
+  </div>
+  <div id="banner" class="banner" hidden=""></div>
+  <main class="main">
+    <div class="col">
+      <section class="card">
+        <h2>Patient <select id="examples" class="examples" aria-label="Load example patient"><option value="" selected="selected">Load example…</option><option value="nsclc-austin">NSCLC EGFR L858R · Austin</option><option value="breast-her2">HER2+ breast · Houston</option><option value="crc-kras">Colorectal KRAS G12C · Dallas</option><option value="blank">Blank template</option></select></h2>
+        <div class="hint"><span>Edit any field — trials re-rank instantly</span><button type="button" class="btn slim" id="find">Find trials</button></div>
+        <div class="photo" id="photo-box" hidden="">
+          <p>Synthetic demo reports live in <code>demo/reports</code>. A photo or PDF is read on this laptop (Tesseract for images).</p>
+          <input id="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.txt,.html">
+          <textarea id="paste" class="in" placeholder="Or paste a note"></textarea>
+          <button type="button" class="btn slim" id="extract" style="margin-top:8px">Extract into the form</button>
+        </div>
+        <form id="patient-form" class="grid">
+          <div class="fld"><label for="age">Age</label><input id="age" class="in" inputmode="numeric" value="62"></div>
+          <div class="fld"><label for="sex">Sex</label>
+            <select id="sex" class="in"><option value="">—</option><option selected="selected">F</option><option>M</option></select>
+          </div>
+          <div class="fld full"><label for="cancer">Cancer</label><input id="cancer" class="in" value="Non-small cell lung cancer"></div>
+          <div class="fld"><label for="stage">Stage</label><input id="stage" class="in" value="IIIB"></div>
+          <div class="fld"><label for="ecog">ECOG</label><input id="ecog" class="in" inputmode="numeric" value="1"></div>
+          <div class="fld full"><label>Biomarkers</label><div id="chips" class="chips"><span class="chip">EGFR L858R <button type="button" data-remove="0" aria-label="Remove EGFR L858R">×</button></span><span class="chip">PD-L1 40% <button type="button" data-remove="1" aria-label="Remove PD-L1 40%">×</button></span><span class="chip add"><input id="chip-add" placeholder="+ add" aria-label="Add biomarker"></span></div></div>
+          <div class="fld full"><label for="priors">Prior treatment</label><input id="priors" class="in" value="Osimertinib (progressed)"></div>
+          <div class="fld"><label for="city">City</label><input id="city" class="in" placeholder="Austin, TX" value="Austin, TX"></div>
+          <div class="fld"><label for="scan">Last scan</label><input id="scan" class="in" placeholder="days ago" inputmode="numeric" value="47"></div>
+          <div class="fld full"><label for="notes">Notes</label><textarea id="notes" class="in">Progressed on first-line osimertinib. Brain MRI is not in the record. No creatinine clearance in the note.</textarea></div>
+        </form>
+      </section>
+      <section class="card scroll" style="flex:1">
+        <h2>Questions for the doctor <span class="n" id="q-count">2 open</span></h2>
+        <div id="questions">
+    <div class="q">
+      <p>Brain metastases on recent MRI? <span class="meta">· affects 3 trials</span></p>
+      <div class="yn">
+        
+          <button type="button" data-answer="brain_mets:yes" class="">Yes</button>
+        
+          <button type="button" data-answer="brain_mets:no" class="">No</button>
+        
+          <button type="button" data-answer="brain_mets:unknown" class="on">Unknown</button>
+        
+      </div>
+    </div>
+    <div class="q">
+      <p>Measurable disease on recent imaging? <span class="meta">· affects 3 trials</span></p>
+      <div class="yn">
+        
+          <button type="button" data-answer="measurable:yes" class="">Yes</button>
+        
+          <button type="button" data-answer="measurable:no" class="">No</button>
+        
+          <button type="button" data-answer="measurable:unknown" class="on">Unknown</button>
+        
+      </div>
+    </div></div>
+        <div class="note">Answering a question re-checks only the rules it affects — no new search.</div>
+      </section>
+    </div>
+    <section class="card col" style="gap:0">
+      <h2>Matching trials <span class="n" id="list-count">10 found, 5 checked · ranked by fit</span></h2>
+      <div id="trial-list" class="scroll" style="flex:1"><button type="button" class="row sel " data-nct="NCT07680790">
+      <div class="rk">1</div>
+      <div>
+        <div class="tt">Study of Izalontamab Brengitecan (BMS-986507) in Combination With Osimertinib Versus Osimertinib Monotherapy or Osimertinib in Combination With Platinum-based Chemotherapy for EGFRmt Non-small Cell Lung Cancer (IZABRIGHT-Lung02) <span class="tag top">Best fit</span></div>
+        <div class="mt"><code>NCT07680790</code><span>Phase 3</span><span>San Antonio, Texas · 74 mi</span></div>
+        <div class="pills"><span class="p pg">3 met</span><span class="p pn">0 failed</span><span class="p pa">5 unknown</span></div>
+        
+      </div>
+    </button><button type="button" class="row  " data-nct="NCT06350097">
+      <div class="rk">2</div>
+      <div>
+        <div class="tt">Phase III, Open-label Study of First-line Osimertinib With or Without Datopotamab Deruxtecan for EGFRm Locally Advanced or Metastatic Non-small Cell Lung Cancer <span class="tag a">Near miss</span></div>
+        <div class="mt"><code>NCT06350097</code><span>Phase 3</span><span>Woodway, Texas · 91 mi</span></div>
+        <div class="pills"><span class="p pg">5 met</span><span class="p pr">1 failed</span><span class="p pa">11 unknown</span></div>
+        <div class="nm">Blocked by: Participants must not have received prior EGFR TKIs or other systemic therapy for Stage I… — The rule wants no prior egfr tki. The record lists Osimertinib (progressed). What would change it: Participants must not have received prior EGFR TKIs or other systemic therapy f….</div>
+      </div>
+    </button><button type="button" class="row  " data-nct="NCT06667076">
+      <div class="rk">3</div>
+      <div>
+        <div class="tt">A Study of Amivantamab in Combination With Lazertinib, or Amivantamab in Combination With Platinum-Based Chemotherapy, for Common Epidermal Growth Factor Receptor (EGFR)-Mutated Locally Advanced or Metastatic Non-Small Cell Lung Cancer (NSCLC) <span class="tag a">Near miss</span></div>
+        <div class="mt"><code>NCT06667076</code><span>Phase 2</span><span>Austin, Texas · 0 mi</span></div>
+        <div class="pills"><span class="p pg">2 met</span><span class="p pr">1 failed</span><span class="p pa">7 unknown</span></div>
+        <div class="nm">Blocked by: Have histologically or cytologically confirmed advanced or metastatic non-small cell lung… — Recorded stage IIIB does not match the stage this rule requires. What would change it: Have histologically or cytologically confirmed advanced or metastatic non-small….</div>
+      </div>
+    </button><button type="button" class="row  ex" data-nct="NCT07005102">
+      <div class="rk">4</div>
+      <div>
+        <div class="tt">A Study to Assess Adverse Events, Change in Disease Activity of Intravenous Telisotuzumab Adizutecan in Combination With Osimertinib as First-Line Treatment in Adult Participants With Locally Advanced Unresectable or Metastatic EGFR-Mutated Non-Squamous Non-Small Cell Lung Cancer <span class="tag x">Excluded</span></div>
+        <div class="mt"><code>NCT07005102</code><span>Phase 2/3</span><span>Austin, Texas · 0 mi</span></div>
+        <div class="pills"><span class="p pg">4 met</span><span class="p pr">2 failed</span><span class="p pa">9 unknown</span></div>
+        <div class="exr">Excluded: Last imaging was 47 days ago. The rule asks for imaging within 14 days.</div>
+      </div>
+    </button><button type="button" class="row  ex" data-nct="NCT05579366">
+      <div class="rk">5</div>
+      <div>
+        <div class="tt">Rinatabart Sesutecan (Rina-S, PRO1184, GEN1184) for Advanced Solid Tumors (GCT1184-01/ PRO1184-001) <span class="tag x">Excluded</span></div>
+        <div class="mt"><code>NCT05579366</code><span>Phase 1/2</span><span>Austin, Texas · 0 mi</span></div>
+        <div class="pills"><span class="p pg">3 met</span><span class="p pr">4 failed</span><span class="p pa">29 unknown</span></div>
+        <div class="exr">Excluded: Biomarkers in the record do not list HER2 positive.</div>
+      </div>
+    </button></div>
+      <div class="list-foot">
+        <span id="more-label">5 more trials found within 100 mi, not yet checked</span>
+        <button type="button" class="btn slim" id="check-next">Check next 5</button>
+      </div>
+    </section>
+    <section class="card col" style="gap:0">
+      <div id="detail" class="scroll" style="flex:1">
+    <div class="kicker">#1 · NCT07680790 · Phase 3</div>
+    <div class="dt">Study of Izalontamab Brengitecan (BMS-986507) in Combination With Osimertinib Versus Osimertinib Monotherapy or Osimertinib in Combination With Platinum-based Chemotherapy for EGFRmt Non-small Cell Lung Cancer (IZABRIGHT-Lung02)</div>
+    <div style="margin-top:5px"><a class="link" href="https://clinicaltrials.gov/study/NCT07680790" target="_blank" rel="noreferrer">View on ClinicalTrials.gov ↗</a></div>
+    <div id="map" role="img" aria-label="Map of the patient and the nearest trial site" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" style="position: relative;" tabindex="0"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 12; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="TrialRadar_files/0_sS69.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-51px, -143px, 0px); opacity: 1;"><img alt="" src="TrialRadar_files/0_002_sS69.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(205px, -143px, 0px); opacity: 1;"><img alt="" src="TrialRadar_files/1_sS69.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-51px, 113px, 0px); opacity: 1;"><img alt="" src="TrialRadar_files/1_002_sS69.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(205px, 113px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"><svg pointer-events="none" class="leaflet-zoom-animated" width="529" height="156" style="transform: translate3d(-44px, -13px, 0px);" viewBox="-44 -13 529 156"><g><path class="leaflet-interactive" stroke="#0e8a87" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#0e8a87" fill-opacity="0.9" fill-rule="evenodd" d="M58,68a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 "></path><path class="leaflet-interactive" stroke="#b7740a" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#b7740a" fill-opacity="0.85" fill-rule="evenodd" d="M59,69a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 "></path><path class="leaflet-interactive" stroke="#b7740a" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#b7740a" fill-opacity="0.85" fill-rule="evenodd" d="M65,68a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 "></path><path class="leaflet-interactive" stroke="#b7740a" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#b7740a" fill-opacity="0.85" fill-rule="evenodd" d="M84,71a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 "></path><path class="leaflet-interactive" stroke="#b7740a" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#b7740a" fill-opacity="0.85" fill-rule="evenodd" d="M88,52a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 "></path><path class="leaflet-interactive" stroke="#b7740a" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#b7740a" fill-opacity="0.85" fill-rule="evenodd" d="M371,78a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 "></path></g></svg></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(271.78px, 207.965px, 0px) scale(1);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="https://leafletjs.com/" title="A JavaScript library for interactive maps"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"></path><path fill="#FFD500" d="M0 4h12v3H0z"></path><path fill="#E0BC00" d="M0 7h12v1H0z"></path></svg> Leaflet</a> <span aria-hidden="true">|</span> © OpenStreetMap</div></div></div></div>
+    <div class="rules"><div class="rule"><span class="p pa">Unknown</span><div>
+    
+    <b>Participants must not have unstable, symptomatic, or uncontrolled CNS metastases, including brain, leptomeningeal disease, and/or spinal cord compression</b><span>The study may allow treated brain metastases. The record does not say whether any are present.</span>
+  </div></div><div class="rule"><span class="p pa">Unknown</span><div>
+    
+    <b>Participants must not have history of ILD/pneumonitis requiring treatment with steroids (≥ Grade 2), or current or suspected ILD/pneumonitis</b><span>The record does not contain evidence for this rule.</span>
+  </div></div><div class="rule"><span class="p pa">Unknown</span><div>
+    
+    <b>Participants must not have clinically significant cardiac disease</b><span>The record does not contain evidence for this rule.</span>
+  </div></div><div class="rule"><span class="p pa">Unknown</span><div>
+    
+    <b>Other protocol-defined inclusion/exclusion criteria apply.</b><span>The record does not contain evidence for this rule.</span>
+  </div></div><div class="rule"><span class="p pg">Met</span><div>
+    
+    <b>Participants must have histologically or cytologically confirmed non-squamous NSCLC, newly diagnosed locally advanced (Stage IIIB/IIIC), metastatic (Stage IVA/IVB), or recurrent disease not amenable to curative surgery or definitive radiotherapy and requiring systemic treatment</b><span>Recorded stage IIIB fits the stage language in this rule.</span><div class="ev">Evidence: <mark>Stage IIIB</mark></div>
+  </div></div><div class="rule"><span class="p pg">Met</span><div>
+    
+    <b>Participants must have documented EGFR-TKI-sensitizing mutation (exon 19 deletion or exon 21 L858R substitution)</b><span>Patient biomarkers include EGFR L858R.</span><div class="ev">Evidence: <mark>EGFR L858R</mark></div>
+  </div></div><div class="rule"><span class="p pg">Met</span><div>
+    
+    <b>Participants must have ECOG Performance Status 0-1</b><span>ECOG 1 is within 0–1.</span><div class="ev">Evidence: <mark>ECOG 1</mark></div>
+  </div></div></div>
+    
+    <div class="wi">
+      <button type="button" class="tg " data-whatif="scan_within_window" aria-pressed="false"></button>
+      <div><div class="t">What if: new scan within 14 days</div><div class="s">Would clear an imaging-window failure on 1 trial (hypothetical)</div></div>
+    </div>
+    <div class="btns">
+      <button type="button" class="btn" id="compare">Compare with #2</button>
+      <button type="button" class="btn" id="referral">Draft referral note</button>
+      <button type="button" class="btn pri" id="summary">Patient-friendly summary</button>
+    </div></div>
+    </section>
+  </main>
+  <footer class="foot">
+    <span class="ic">i</span>
+    <span>Suggestions for the treating doctor to confirm. TrialRadar never contacts patients or sites.</span>
+    <span class="demo" id="mode-pill">Recorded demo data</span>
+  </footer>
+  <div id="toast" class="toast" hidden=""></div>
+  <div id="modal"></div>
+  <script src="TrialRadar_files/leaflet_sS69.js"></script>
+  <script src="TrialRadar_files/app_sS69.js"></script>
+
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>

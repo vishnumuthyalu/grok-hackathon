@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -80,7 +81,7 @@ async def _mcp_roundtrip(tmp_path, monkeypatch):
 
     env = _prepare(tmp_path, monkeypatch)
     params = StdioServerParameters(
-        command=os.environ.get("PYTHON", "python3"),
+        command=os.environ.get("PYTHON", sys.executable),
         args=["-m", "trialradar.mcp_server"],
         env=env,
         cwd=str(Path(__file__).resolve().parents[1]),
