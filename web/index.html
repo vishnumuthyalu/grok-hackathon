@@ -1,102 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TrialRadar</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%230f766e%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%276%27 fill=%27white%27/%3E%3C/svg%3E">
+  <script>
+    try { const t = localStorage.getItem("trialradar-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
   <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <header class="top">
-    <div class="logo" aria-hidden="true"><i></i></div>
-    <div>
-      <div class="wm">Trial<span>Radar</span></div>
-      <div class="sub">Clinical trial matching for doctors and their AI assistants</div>
-    </div>
-    <div class="sp"></div>
-    <span class="lbl">Patient source</span>
-    <div class="seg" role="tablist">
-      <button type="button" id="src-typed" class="on">Typed</button>
-      <button type="button" id="src-photo">Photo of report (beta)</button>
-    </div>
-    <span class="badge">Runs locally • open source • no patient data leaves this laptop</span>
-  </header>
-  <div class="filters">
-    <div class="f">
-      <span class="k">Travel distance</span>
-      <input id="distance" type="range" min="25" max="250" step="5" value="100" aria-label="Travel distance in miles">
-      <span class="val" id="distance-val">100 mi</span>
-    </div>
-    <div class="f">
-      <span class="k">Phase</span>
-      <label class="cb"><input type="checkbox" id="ph1" checked> 1</label>
-      <label class="cb"><input type="checkbox" id="ph2" checked> 2</label>
-      <label class="cb"><input type="checkbox" id="ph3" checked> 3</label>
-    </div>
-    <div class="f">
-      <button type="button" class="tg on" id="recruiting" aria-pressed="true" aria-label="Recruiting only"></button>
-      <span>Recruiting only</span>
-    </div>
-    <div class="sp"></div>
-    <div class="source-line">
-      <span id="source-line">Source: ClinicalTrials.gov</span>
-      · <button type="button" class="linkish" id="refresh-live">Refresh live</button>
-    </div>
+<header class="top">
+  <button type="button" class="icon-btn t" id="rail-toggle" aria-expanded="false" aria-controls="rail" aria-label="Filters and patient details" title="Filters & patient details">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/></svg>
+  </button>
+  <div class="wm">Trial<span>Radar</span></div>
+  <select id="examples" class="ex-sel" aria-label="Load example patient"><option value="">Load example…</option></select>
+  <div class="sp"></div>
+  <div class="saved" id="saved" aria-live="polite">
+    <span aria-hidden="true">⏱</span>
+    <div><span class="big" id="saved-hrs">~0.0 hrs</span> <span class="lbl">saved<span class="lbl-long"> on this search vs. manual review</span></span></div>
+    <button type="button" class="info" id="saved-info" aria-label="How time saved is estimated"><span class="ring" aria-hidden="true">i</span>
+      <div class="pop" role="tooltip">
+        <h4>How "time saved" is estimated</h4>
+        <code id="formula-text"></code>
+        <div id="formula-live"></div>
+        <small><span class="ph">Placeholder assumptions.</span> These minute values are not research findings; replace them with a sourced benchmark before any external claim.</small>
+      </div>
+    </button>
   </div>
-  <div id="banner" class="banner" hidden></div>
-  <main class="main">
-    <div class="col">
-      <section class="card">
-        <h2>Patient <select id="examples" class="examples" aria-label="Load example patient"><option value="">Load example…</option></select></h2>
-        <div class="hint"><span>Edit any field — trials re-rank instantly</span><button type="button" class="btn slim" id="find">Find trials</button></div>
-        <div class="photo" id="photo-box" hidden>
-          <p>Synthetic demo reports live in <code>demo/reports</code>. A photo or PDF is read on this laptop (Tesseract for images).</p>
-          <input id="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.txt,.html">
-          <textarea id="paste" class="in" placeholder="Or paste a note"></textarea>
-          <button type="button" class="btn slim" id="extract" style="margin-top:8px">Extract into the form</button>
-        </div>
-        <form id="patient-form" class="grid">
-          <div class="fld"><label for="age">Age</label><input id="age" class="in" inputmode="numeric"></div>
-          <div class="fld"><label for="sex">Sex</label>
-            <select id="sex" class="in"><option value="">—</option><option>F</option><option>M</option></select>
-          </div>
-          <div class="fld full"><label for="cancer">Cancer</label><input id="cancer" class="in"></div>
-          <div class="fld"><label for="stage">Stage</label><input id="stage" class="in"></div>
-          <div class="fld"><label for="ecog">ECOG</label><input id="ecog" class="in" inputmode="numeric"></div>
-          <div class="fld full"><label>Biomarkers</label><div id="chips" class="chips"></div></div>
-          <div class="fld full"><label for="priors">Prior treatment</label><input id="priors" class="in"></div>
-          <div class="fld"><label for="city">City</label><input id="city" class="in" placeholder="Austin, TX"></div>
-          <div class="fld"><label for="scan">Last scan</label><input id="scan" class="in" placeholder="days ago" inputmode="numeric"></div>
-          <div class="fld full"><label for="notes">Notes</label><textarea id="notes" class="in"></textarea></div>
-        </form>
-      </section>
-      <section class="card scroll" style="flex:1">
-        <h2>Questions for the doctor <span class="n" id="q-count"></span></h2>
-        <div id="questions"></div>
-        <div class="note">Answering a question re-checks only the rules it affects — no new search.</div>
-      </section>
+  <div class="sp"></div>
+  <button type="button" class="icon-btn t" id="theme-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Toggle dark mode"><span id="theme-ico" aria-hidden="true">☾</span></button>
+  <div class="badge" aria-label="Current patient, identifiers masked">
+    <div class="id" title="Name, DOB and MRN are not stored by TrialRadar yet (preview)">
+      <span class="src"><i></i><span id="pt-src">Patient record</span></span>
+      <b id="pt-id">———•••</b>
+      <span class="na"><span class="k">DOB</span>••/••/••••</span>
+      <span class="na"><span class="k">MRN</span>•••• ••••</span>
     </div>
-    <section class="card col" style="gap:0">
-      <h2>Matching trials <span class="n" id="list-count"></span></h2>
-      <div id="trial-list" class="scroll" style="flex:1"></div>
-      <div class="list-foot">
-        <span id="more-label"></span>
-        <button type="button" class="btn slim" id="check-next">Check next 5</button>
+    <div class="chips" id="patient-chips"></div>
+  </div>
+</header>
+
+<aside class="rail" id="rail" aria-label="Filters and patient details" inert>
+  <div class="rail-in">
+    <section>
+      <h3>Patient source</h3>
+      <div class="seg" id="src-seg">
+        <button type="button" data-src="typed" class="on">Typed</button><button type="button" data-src="photo">Photo of report (beta)</button>
+      </div>
+      <div class="photo-box" id="photo-box" hidden>
+        A photo or PDF is read on this device, then fills the fields below for you to check.
+        <input type="file" id="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.txt,.html" aria-label="Choose report photo or PDF">
+        <textarea id="paste" placeholder="Or paste a note"></textarea>
+        <button type="button" class="btn t" id="extract">Extract into the form</button>
       </div>
     </section>
-    <section class="card col" style="gap:0">
-      <div id="detail" class="scroll" style="flex:1"></div>
+    <section>
+      <h3>Travel distance</h3>
+      <div class="seg" id="dist-seg">
+        <button type="button" data-d="25">Local<br><small>≤25 mi</small></button><button type="button" data-d="100" class="on">Regional<br><small>≤100 mi</small></button><button type="button" data-d="250" title="Up to the 250 mi search radius. A true nationwide search is not built yet.">Wide<br><small>≤250 mi</small></button>
+      </div>
+      <div class="muted" style="margin-top:6px">Nationwide <span class="preview">Preview</span> needs a separate unbounded search; not built yet.</div>
     </section>
-  </main>
-  <footer class="foot">
-    <span class="ic">i</span>
-    <span>Suggestions for the treating doctor to confirm. TrialRadar never contacts patients or sites.</span>
-    <span class="demo" id="mode-pill">Local</span>
-  </footer>
-  <div id="toast" class="toast" hidden></div>
-  <div id="modal"></div>
-  <script src="/static/vendor/leaflet/leaflet.js"></script>
-  <script src="/static/app.js"></script>
+    <section>
+      <h3>Trial filters</h3>
+      <div class="row-ctl"><span>Phase</span>
+        <div class="cbs">
+          <label><input type="checkbox" id="ph1" class="ph" value="1" checked> 1</label>
+          <label><input type="checkbox" id="ph2" class="ph" value="2" checked> 2</label>
+          <label><input type="checkbox" id="ph3" class="ph" value="3" checked> 3</label>
+        </div>
+      </div>
+      <div class="row-ctl"><span>Recruiting only</span><button type="button" class="tg on" id="recruiting" aria-pressed="true" aria-label="Recruiting only"></button></div>
+      <div id="whatifs"></div>
+    </section>
+    <section>
+      <h3>Patient details</h3>
+      <form id="patient-form" onsubmit="return false">
+        <div class="grid2">
+          <div class="fld"><label for="age">Age</label><input id="age" inputmode="numeric"></div>
+          <div class="fld"><label for="sex">Sex</label><select id="sex"><option value="">—</option><option>F</option><option>M</option></select></div>
+        </div>
+        <div class="fld"><label for="cancer">Diagnosis</label><input id="cancer"></div>
+        <div class="grid2">
+          <div class="fld"><label for="stage">Stage</label><input id="stage"></div>
+          <div class="fld"><label for="ecog">ECOG</label><input id="ecog" inputmode="numeric"></div>
+        </div>
+        <div class="fld"><label id="bio-lbl">Biomarkers <span class="muted">(click a chip to edit)</span></label>
+          <div class="bio-ed" id="bio-ed" role="group" aria-labelledby="bio-lbl"></div></div>
+        <div class="fld"><label for="priors">Prior treatment <span class="muted">(separate with ;)</span></label><input id="priors"></div>
+        <div class="grid2">
+          <div class="fld"><label for="city">City</label><input id="city" placeholder="Austin, TX"></div>
+          <div class="fld"><label for="scan">Last scan (days)</label><input id="scan" inputmode="numeric"></div>
+        </div>
+        <div class="fld"><label for="notes">Notes</label><textarea id="notes"></textarea></div>
+      </form>
+      <div class="muted">Edits apply to this search only and re-rank instantly.</div>
+      <button type="button" class="btn pri t" id="find">Find trials</button>
+    </section>
+    <section class="is-preview">
+      <h3>Weekly inbox <span class="preview">Preview</span></h3>
+      <div class="row-ctl"><span>New matches for this patient, in TrialRadar · refreshes every Friday</span>
+        <button type="button" class="tg" id="weekly" aria-pressed="false" aria-label="Weekly inbox (preview, not available yet)" data-preview="Weekly inbox"></button></div>
+    </section>
+    <section class="muted"><span id="source-line">Source: ClinicalTrials.gov</span> · <button type="button" class="linkish" id="refresh-live">Refresh live</button><br><span id="mode-pill"></span></section>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<main class="main">
+  <div id="banner" class="banner" hidden></div>
+  <div class="col">
+    <div class="qwrap">
+      <section class="qcard" aria-label="Questions for the clinician">
+        <div class="qhead"><b>Questions for the clinician</b><span id="q-sub"></span></div>
+        <div class="qs" id="questions"></div>
+        <div class="unlock" id="unlock"></div>
+      </section>
+    </div>
+    <section class="list" aria-label="Matching trials">
+      <div class="list-top"><b id="list-title">Matching trials</b><span id="list-sub"></span></div>
+      <div class="cols" aria-hidden="true"><span></span><span>Trial · next step</span><span class="c-site">Nearest site</span><span class="r c-elig">Eligibility</span><span class="r c-sev">Study evidence</span></div>
+      <div id="trials"></div>
+      <div class="list-foot"><span id="more-label"></span><button type="button" class="btn t" id="check-next">Check next 5</button></div>
+    </section>
+  </div>
+  <footer class="foot">Suggestions for the treating clinician to confirm. TrialRadar never contacts patients or sites · No patient data leaves this device · built for HIPAA-aligned use · Not a medical device.</footer>
+</main>
+
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-h"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script src="/static/app.js"></script>
 </body>
 </html>
