@@ -117,6 +117,7 @@ async def run(fast: bool, delay: float | None) -> None:
     clear_session()
     env = os.environ.copy()
     env["TRIALRADAR_DATA"] = os.environ["TRIALRADAR_DATA"]
+    env["PYTHONUTF8"] = "1"
     params = StdioServerParameters(
         command=sys.executable,
         args=["-m", "trialradar.mcp_server"],

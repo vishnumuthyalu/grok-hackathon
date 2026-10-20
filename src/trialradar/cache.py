@@ -58,7 +58,7 @@ def load_cache() -> dict[str, Any] | None:
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text())
+        return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return None
 
@@ -103,4 +103,4 @@ def write_cache(patients: dict[str, dict[str, Any]], *, provider: str) -> None:
         ),
         "patients": patients,
     }
-    path.write_text(json.dumps(payload))
+    path.write_text(json.dumps(payload), encoding="utf-8")

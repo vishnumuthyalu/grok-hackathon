@@ -22,7 +22,7 @@ def load() -> Session:
         if not path.exists():
             return Session(updated_at=_now())
         try:
-            return Session.model_validate_json(path.read_text())
+            return Session.model_validate_json(path.read_text(encoding="utf-8"))
         except ValueError:
             return Session(updated_at=_now())
 
@@ -34,7 +34,7 @@ def save(session: Session) -> Session:
         session.revision += 1
         session.updated_at = _now()
         tmp = path.with_suffix(".tmp")
-        tmp.write_text(session.model_dump_json())
+        tmp.write_text(session.model_dump_json(), encoding="utf-8")
         os.replace(tmp, path)
     return session
 
@@ -50,7 +50,7 @@ def reset() -> Session:
     with _lock:
         if path.exists():
             try:
-                previous = Session.model_validate_json(path.read_text()).revision
+                previous = Session.model_validate_json(path.read_text(encoding="utf-8")).revision
             except ValueError:
                 previous = 0
             path.unlink()

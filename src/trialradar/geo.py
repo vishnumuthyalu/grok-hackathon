@@ -128,7 +128,7 @@ def _read_cache() -> dict:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text())
+        return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
 
@@ -136,7 +136,7 @@ def _read_cache() -> dict:
 def _write_cache(cache: dict) -> None:
     path = geocode_cache_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(cache, indent=2))
+    path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
 
 
 def geocode(place: str, *, allow_network: bool = True) -> tuple[float, float] | None:

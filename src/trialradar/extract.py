@@ -243,7 +243,7 @@ def ocr_path(path: Path) -> str:
         if len(text.strip()) >= 40:
             return text
     if suffix in {".txt", ".md", ".html", ".htm"}:
-        return path.read_text(errors="ignore")
+        return path.read_text(encoding="utf-8", errors="ignore")
     try:
         import pytesseract
         from PIL import Image

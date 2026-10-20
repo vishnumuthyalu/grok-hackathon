@@ -5,6 +5,7 @@ cd "$ROOT"
 # Absolute path so the web app and the MCP process share one session file
 # even when they are started from different working directories.
 export TRIALRADAR_DATA="${TRIALRADAR_DATA:-$ROOT/data}"
+export PYTHONUTF8=1
 if [[ -f .venv/bin/activate ]]; then
   # shellcheck disable=SC1091
   source .venv/bin/activate
