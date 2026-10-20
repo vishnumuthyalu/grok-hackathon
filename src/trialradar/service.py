@@ -478,6 +478,10 @@ def load_example(example_id: str, *, check_now: bool = True) -> dict[str, Any]:
         session.error = f"Unknown example '{example_id}'."
         save(session)
         return view(session)
+    # A previous slider, phase, or recruiting toggle must not hide the prepared demo.
+    session = load()
+    session.filters = Filters()
+    save(session)
     if example_id == "blank":
         set_patient(Patient(), source="typed")
         return view(load())
