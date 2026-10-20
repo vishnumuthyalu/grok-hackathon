@@ -80,6 +80,20 @@ def test_check_is_one_call_and_edits_do_not_call_again(monkeypatch, tmp_path):
     assert provider.calls == 1
 
 
+def test_example_load_resets_a_narrowed_distance(monkeypatch, tmp_path):
+    _cache(monkeypatch, tmp_path)
+    set_provider(StubProvider())
+    search(patient=NSCLC_AUSTIN.model_copy(deep=True))
+    narrowed = rescore(distance_mi=25, answers={"brain_mets": "no"})
+    assert narrowed["filters"]["distance_mi"] == 25
+    loaded = load_example("nsclc-austin")
+    assert loaded["filters"]["distance_mi"] == 100
+    assert loaded["filters"]["phases"] == ["1", "2", "3"]
+    assert loaded["filters"]["recruiting_only"] is True
+    assert loaded["answers"].get("brain_mets") != "no"
+    assert loaded["found_count"] == 1
+
+
 def test_api_example_roundtrip_and_notes(monkeypatch, tmp_path):
     _cache(monkeypatch, tmp_path)
     set_provider(StubProvider())
