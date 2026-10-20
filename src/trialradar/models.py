@@ -135,6 +135,8 @@ class Session(BaseModel):
     retrieved_at: str | None = None
     source_label: str = "ClinicalTrials.gov"
     total_available: int | None = None
+    referral_note: str | None = None
+    summary_note: str | None = None
     revision: int = 0
     updated_at: str = ""
     disclaimer: str = DISCLAIMER

@@ -204,6 +204,8 @@ def set_patient(patient: Patient, *, source: str = "typed") -> Session:
     session.checks = {}
     session.selected_nct = None
     session.compare_nct = None
+    session.referral_note = None
+    session.summary_note = None
     session.error = None
     session.warning = None
     session.demo_cache = False
@@ -236,7 +238,9 @@ def search(*, patient: Patient | None = None, force_live: bool = False) -> dict[
         entry = match_patient(session.patient)
         if entry:
             session.trials = trials_from_entry(entry)
-            session.checks = checks_from_entry(entry)
+            # Recorded judgments stay in the cache until check_eligibility.
+            # The browser can then show the list first, and the scores on the next step.
+            session.checks = {}
             session.total_available = entry.get("total_available")
             session.demo_cache = True
             session.source_label = "Recorded ClinicalTrials.gov results (demo cache)"
@@ -290,6 +294,8 @@ def search(*, patient: Patient | None = None, force_live: bool = False) -> dict[
         session.selected_nct = None
     session.fetched_radius_mi = radius
     session.retrieved_at = _now()
+    session.referral_note = None
+    session.summary_note = None
     session.error = None
     session.warning = warning
     refresh_distances(session)
@@ -332,6 +338,15 @@ def check(*, nct_ids: list[str] | None = None, top_n: int | None = None, next_ba
         targets = [trial for trial in ordered if trial.nct_id not in session.checks][:limit]
     else:
         targets = [trial for trial in ordered[:limit] if trial.nct_id not in session.checks]
+    adopted: list[str] = []
+    if session.demo_cache and session.patient is not None:
+        entry = match_patient(session.patient)
+        recorded = checks_from_entry(entry) if entry else {}
+        for trial in targets:
+            if trial.nct_id in session.checks or trial.nct_id not in recorded:
+                continue
+            session.checks[trial.nct_id] = recorded[trial.nct_id]
+            adopted.append(trial.nct_id)
     missing = [trial for trial in targets if trial.nct_id not in session.checks]
     if missing:
         provider, warning = get_provider()
@@ -344,15 +359,10 @@ def check(*, nct_ids: list[str] | None = None, top_n: int | None = None, next_ba
             checked = provider.evaluate(session.patient, trial.eligibility_criteria)
             checked.nct_id = trial.nct_id
             session.checks[trial.nct_id] = checked
-    if session.selected_nct is None:
-        for trial in ordered:
-            if trial.nct_id in session.checks:
-                session.selected_nct = trial.nct_id
-                break
     session.error = None
     save(session)
     payload = view(session)
-    payload["newly_checked"] = [trial.nct_id for trial in missing]
+    payload["newly_checked"] = adopted + [trial.nct_id for trial in missing]
     return payload
 
 
@@ -441,6 +451,10 @@ def draft(nct_id: str | None = None) -> dict[str, Any]:
         "disclaimer": DISCLAIMER,
         "delivery": "copy_or_download_only",
     }
+    session.referral_note = notes["referral"]
+    session.summary_note = notes["summary"]
+    save(session)
+    payload = view(session)
     payload["notes"] = notes
     return payload
 
@@ -589,6 +603,8 @@ def view(session: Session | None = None) -> dict[str, Any]:
         "source_label": session.source_label,
         "total_available": session.total_available,
         "fetched_radius_mi": session.fetched_radius_mi,
+        "referral_note": session.referral_note,
+        "summary_note": session.summary_note,
         "revision": session.revision,
         "updated_at": session.updated_at,
         "disclaimer": DISCLAIMER,
